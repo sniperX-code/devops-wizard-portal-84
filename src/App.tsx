@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CredentialsProvider } from "./contexts/CredentialsContext";
 import { InstanceProvider } from "./contexts/InstanceContext";
@@ -30,37 +30,35 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <CredentialsProvider>
-            <InstanceProvider>
-              <AdminProvider>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/auth" element={<AuthPage />} />
-                  <Route path="/credentials" element={<CredentialsPage />} />
-                  
-                  {/* User Dashboard Routes */}
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/instance" element={<InstancePage />} />
-                  <Route path="/subscription" element={<SubscriptionPage />} />
-                  
-                  {/* Admin Routes */}
-                  <Route path="/admin" element={<AdminDashboardPage />} />
-                  <Route path="/admin/instances" element={<AdminInstancesPage />} />
-                  <Route path="/admin/users" element={<AdminUsersPage />} />
-                  
-                  {/* Catch-all route for 404 */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </AdminProvider>
-            </InstanceProvider>
-          </CredentialsProvider>
-        </AuthProvider>
-      </BrowserRouter>
+      <AuthProvider>
+        <CredentialsProvider>
+          <InstanceProvider>
+            <AdminProvider>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/credentials" element={<CredentialsPage />} />
+                
+                {/* User Dashboard Routes */}
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/instance" element={<InstancePage />} />
+                <Route path="/subscription" element={<SubscriptionPage />} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin" element={<AdminDashboardPage />} />
+                <Route path="/admin/instances" element={<AdminInstancesPage />} />
+                <Route path="/admin/users" element={<AdminUsersPage />} />
+                
+                {/* Catch-all route for 404 */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AdminProvider>
+          </InstanceProvider>
+        </CredentialsProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
