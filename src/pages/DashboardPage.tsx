@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import StatsCard from '@/components/ui/StatsCard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ChartCard from '@/components/ui/ChartCard';
-import { Server, Activity, Memory, Database } from 'lucide-react';
+import { Server, Activity, HardDrive, Database } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 const DashboardPage: React.FC = () => {
@@ -203,7 +203,7 @@ const DashboardPage: React.FC = () => {
           <StatsCard 
             title="Memory" 
             value={`${instance.memory} GB`}
-            icon={<Memory className="h-5 w-5" />}
+            icon={<HardDrive className="h-5 w-5" />}
             description={instance.status === 'running' ? 'Current usage: 1.7 GB' : 'Not running'}
           />
           <StatsCard 

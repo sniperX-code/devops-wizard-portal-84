@@ -109,10 +109,13 @@ export const InstanceProvider: React.FC<InstanceProviderProps> = ({ children }) 
         
         // Simulate instance creation
         setTimeout(() => {
-          newInstance.status = 'running';
-          newInstance.lastUpdated = new Date().toISOString();
-          setInstance({ ...newInstance });
-          localStorage.setItem(`devops-instance-${user.id}`, JSON.stringify(newInstance));
+          const updatedInstance: Instance = {
+            ...newInstance,
+            status: 'running',
+            lastUpdated: new Date().toISOString()
+          };
+          setInstance(updatedInstance);
+          localStorage.setItem(`devops-instance-${user.id}`, JSON.stringify(updatedInstance));
           
           toast({
             title: "Instance Created",
@@ -138,7 +141,7 @@ export const InstanceProvider: React.FC<InstanceProviderProps> = ({ children }) 
     // Simulate API call
     return new Promise<void>((resolve) => {
       setTimeout(() => {
-        const updatedInstance = { 
+        const updatedInstance: Instance = { 
           ...instance, 
           status: 'running', 
           lastUpdated: new Date().toISOString() 
@@ -171,7 +174,7 @@ export const InstanceProvider: React.FC<InstanceProviderProps> = ({ children }) 
     // Simulate API call
     return new Promise<void>((resolve) => {
       setTimeout(() => {
-        const updatedInstance = { 
+        const updatedInstance: Instance = { 
           ...instance, 
           status: 'stopped', 
           lastUpdated: new Date().toISOString() 
