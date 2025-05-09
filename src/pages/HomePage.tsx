@@ -22,7 +22,7 @@ const HomePage: React.FC = () => {
               <Button asChild size="lg" className="bg-white text-devops-navy hover:bg-white/90">
                 <Link to="/auth">Get Started</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+              <Button asChild size="lg" className="bg-white text-devops-navy hover:bg-white/90">
                 <a href="#learn-more">Learn More</a>
               </Button>
             </div>
