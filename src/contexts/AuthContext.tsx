@@ -12,6 +12,12 @@ export type User = {
   isAdmin: boolean;
 };
 
+type ProfileUpdateData = {
+  name?: string;
+  email?: string;
+  password?: string;
+};
+
 // Define the Auth context type
 type AuthContextType = {
   user: User | null;
@@ -20,6 +26,7 @@ type AuthContextType = {
   login: (provider: 'google' | 'github') => void;
   loginWithEmail: (email: string, password: string) => Promise<boolean>; // Added email login
   logout: () => void;
+  updateUserProfile: (data: ProfileUpdateData) => boolean;
 };
 
 // Create the Auth context
@@ -144,6 +151,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   };
 
+  // Update user profile
+  const updateUserProfile = (data: ProfileUpdateData): boolean => {
+    if (!user) return false;
+    
+    try {
+      // Get the users database
+      const usersString = localStorage.getItem('devops-users');
+      const users = usersString ? JSON.parse(usersString) : {};
+      
+      // Update the current user
+      const updatedUser = { ...user };
+      
+      if (data.name) updatedUser.name = data.name;
+      if (data.email && data.email !== user.email) {
+        // In a real app, you would verify the new email
+        // For now, we'll just check if it's already in use
+        if (users[data.email] && users[data.email].user.id !== user.id) {
+          toast({
+            title: "Email already in use",
+            description: "Please choose a different email address.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        // Update email in the database
+        const userEntry = users[user.email];
+        delete users[user.email]; // Remove old entry
+        users[data.email] = userEntry; // Add new entry
+        updatedUser.email = data.email;
+      }
+      
+      // Update password if provided
+      if (data.password && user.email) {
+        users[user.email || data.email || ''].password = data.password;
+      }
+      
+      // Update the user entry
+      if (updatedUser.email) {
+        users[updatedUser.email].user = updatedUser;
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('devops-users', JSON.stringify(users));
+      localStorage.setItem('devops-user', JSON.stringify(updatedUser));
+      
+      // Update state
+      setUser(updatedUser);
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error updating profile",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   // Logout function
   const logout = () => {
     setUser(null);
@@ -162,7 +230,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isLoading,
       login,
       loginWithEmail,
-      logout
+      logout,
+      updateUserProfile
     }}>
       {children}
     </AuthContext.Provider>

@@ -18,6 +18,7 @@ import CredentialsPage from "./pages/CredentialsPage";
 import DashboardPage from "./pages/DashboardPage";
 import InstancePage from "./pages/InstancePage";
 import SubscriptionPage from "./pages/SubscriptionPage";
+import ProfilePage from "./pages/ProfilePage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminInstancesPage from "./pages/AdminInstancesPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
@@ -28,8 +29,6 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
       <AuthProvider>
         <CredentialsProvider>
           <InstanceProvider>
@@ -40,10 +39,11 @@ const App = () => (
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/auth" element={<AuthPage />} />
-                <Route path="/credentials" element={<CredentialsPage />} />
                 
-                {/* User Dashboard Routes */}
+                {/* User Routes */}
+                <Route path="/credentials" element={<CredentialsPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/instance" element={<InstancePage />} />
                 <Route path="/subscription" element={<SubscriptionPage />} />
                 
@@ -55,6 +55,8 @@ const App = () => (
                 {/* Catch-all route for 404 */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              <Toaster />
+              <Sonner />
             </AdminProvider>
           </InstanceProvider>
         </CredentialsProvider>
