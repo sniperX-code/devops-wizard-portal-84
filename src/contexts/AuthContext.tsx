@@ -18,6 +18,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (provider: 'google' | 'github') => void;
+  loginWithEmail: (email: string, password: string) => Promise<boolean>; // Added email login
   logout: () => void;
 };
 
@@ -79,6 +80,70 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, 1500);
   };
 
+  // Email login/signup function
+  const loginWithEmail = async (email: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
+    
+    // Check if user exists in localStorage (mock database)
+    const usersString = localStorage.getItem('devops-users');
+    const users = usersString ? JSON.parse(usersString) : {};
+    
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        let currentUser;
+        let isNewUser = false;
+        
+        // If user exists, check password
+        if (users[email]) {
+          // In a real app, you would hash and compare passwords
+          if (users[email].password === password) {
+            currentUser = users[email].user;
+          } else {
+            toast({
+              title: "Login failed",
+              description: "Incorrect password. Please try again.",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            resolve(false);
+            return;
+          }
+        } else {
+          // User doesn't exist, create a new account
+          isNewUser = true;
+          const name = email.split('@')[0];
+          currentUser = {
+            id: Math.random().toString(36).substring(2, 9),
+            name: name.charAt(0).toUpperCase() + name.slice(1),
+            email: email,
+            avatar: `https://avatars.dicebear.com/api/initials/${name.substring(0, 2).toUpperCase()}.svg`,
+            isAdmin: false,
+          };
+          
+          // Store user in "database"
+          users[email] = {
+            password: password,
+            user: currentUser
+          };
+          localStorage.setItem('devops-users', JSON.stringify(users));
+        }
+        
+        // Set user in state and localStorage
+        setUser(currentUser);
+        localStorage.setItem('devops-user', JSON.stringify(currentUser));
+        
+        toast({
+          title: isNewUser ? "Account created successfully" : "Login successful",
+          description: `Welcome${isNewUser ? ' to DevOpsWizard' : ''}, ${currentUser.name}!`,
+        });
+        
+        setIsLoading(false);
+        navigate('/credentials');
+        resolve(true);
+      }, 1500);
+    });
+  };
+
   // Logout function
   const logout = () => {
     setUser(null);
@@ -96,6 +161,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isAuthenticated: !!user,
       isLoading,
       login,
+      loginWithEmail,
       logout
     }}>
       {children}

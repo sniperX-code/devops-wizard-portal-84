@@ -1,18 +1,48 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Mail, Key } from 'lucide-react';
+
+// Define form schema
+const formSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+});
 
 const AuthPage: React.FC = () => {
-  const { isAuthenticated, login, isLoading } = useAuth();
+  const { isAuthenticated, login, loginWithEmail, isLoading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Initialize form
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
   // If already authenticated, redirect to the dashboard
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
+
+  // Handle form submission
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    await loginWithEmail(values.email, values.password);
+    setIsSubmitting(false);
+  };
 
   return (
     <MainLayout showFooter={false}>
@@ -26,10 +56,77 @@ const AuthPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {/* Email and password login form */}
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 mb-6">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input 
+                              placeholder="you@example.com" 
+                              className="pl-10" 
+                              {...field} 
+                              disabled={isSubmitting}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Key className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input 
+                              type="password" 
+                              placeholder="••••••••" 
+                              className="pl-10" 
+                              {...field} 
+                              disabled={isSubmitting}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Authenticating...' : 'Sign In / Sign Up'}
+                  </Button>
+                </form>
+              </Form>
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+
+              {/* Social logins */}
               <Button
                 variant="outline"
                 className="w-full flex items-center justify-center"
-                disabled={isLoading}
+                disabled={isLoading || isSubmitting}
                 onClick={() => login('google')}
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -57,7 +154,7 @@ const AuthPage: React.FC = () => {
               <Button
                 variant="outline"
                 className="w-full flex items-center justify-center"
-                disabled={isLoading}
+                disabled={isLoading || isSubmitting}
                 onClick={() => login('github')}
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
