@@ -1,4 +1,5 @@
 
+import { httpClient } from '@/config/api';
 import { API_CONFIG, TokenManager } from '@/config/api';
 
 // Types for authentication
@@ -27,35 +28,8 @@ export interface AuthResponse {
 }
 
 export class AuthService {
-  private static async makeRequest<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${API_CONFIG.BASE_URL}${endpoint}`;
-    
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...TokenManager.getAuthHeaders(),
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP Error: ${response.status}`);
-    }
-
-    // Handle no content responses
-    if (response.status === 204 || response.headers.get('content-length') === '0') {
-      return {} as T;
-    }
-
-    return response.json();
-  }
-
   static async signUp(data: SignUpRequest): Promise<AuthResponse> {
-    const response = await this.makeRequest<AuthResponse>(
+    const response = await httpClient.makeRequest<AuthResponse>(
       API_CONFIG.ENDPOINTS.AUTH.SIGN_UP,
       {
         method: 'POST',
@@ -72,7 +46,7 @@ export class AuthService {
   }
 
   static async signIn(data: SignInRequest): Promise<AuthResponse> {
-    const response = await this.makeRequest<AuthResponse>(
+    const response = await httpClient.makeRequest<AuthResponse>(
       API_CONFIG.ENDPOINTS.AUTH.SIGN_IN,
       {
         method: 'POST',
@@ -89,7 +63,7 @@ export class AuthService {
   }
 
   static async changePassword(data: ChangePasswordRequest): Promise<void> {
-    await this.makeRequest<void>(
+    await httpClient.makeRequest<void>(
       API_CONFIG.ENDPOINTS.AUTH.CHANGE_PASSWORD,
       {
         method: 'PUT',

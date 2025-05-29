@@ -1,5 +1,4 @@
-
-import { API_CONFIG, TokenManager } from '@/config/api';
+import { httpClient, API_CONFIG } from '@/config/api';
 
 // Types for instance management
 export interface Instance {
@@ -25,41 +24,14 @@ export interface InstancesListResponse {
 }
 
 export class InstanceService {
-  private static async makeRequest<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${API_CONFIG.BASE_URL}${endpoint}`;
-    
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...TokenManager.getAuthHeaders(),
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP Error: ${response.status}`);
-    }
-
-    // Handle no content responses
-    if (response.status === 204 || response.headers.get('content-length') === '0') {
-      return {} as T;
-    }
-
-    return response.json();
-  }
-
   static async getAllInstances(): Promise<InstancesListResponse> {
-    return this.makeRequest<InstancesListResponse>(
+    return httpClient.makeRequest<InstancesListResponse>(
       API_CONFIG.ENDPOINTS.INSTANCES.GET_ALL
     );
   }
 
   static async createInstance(data: CreateInstanceRequest = {}): Promise<Instance> {
-    return this.makeRequest<Instance>(
+    return httpClient.makeRequest<Instance>(
       API_CONFIG.ENDPOINTS.INSTANCES.CREATE,
       {
         method: 'POST',
@@ -69,7 +41,7 @@ export class InstanceService {
   }
 
   static async deleteInstance(instanceId: string): Promise<void> {
-    await this.makeRequest<void>(
+    await httpClient.makeRequest<void>(
       `${API_CONFIG.ENDPOINTS.INSTANCES.DELETE}/${instanceId}`,
       {
         method: 'DELETE',

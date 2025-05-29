@@ -1,7 +1,9 @@
 
+import { toast } from '@/hooks/use-toast';
+
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'https://your-api-base-url.com/api', // Replace with your actual API base URL
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://your-api-base-url.com/api',
   ENDPOINTS: {
     AUTH: {
       SIGN_UP: '/auth/sign-up',
@@ -53,3 +55,57 @@ export const TokenManager = {
     };
   },
 };
+
+// HTTP Client with interceptors
+export const createHttpClient = () => {
+  const makeRequest = async <T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> => {
+    const url = `${API_CONFIG.BASE_URL}${endpoint}`;
+    
+    // Request interceptor - automatically add auth headers
+    const headers = {
+      ...TokenManager.getAuthHeaders(),
+      ...options.headers,
+    };
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      // Response interceptor - handle auth errors
+      if (response.status === 401 || response.status === 403) {
+        TokenManager.removeToken();
+        toast({
+          title: "Session expired",
+          description: "Please log in again.",
+          variant: "destructive",
+        });
+        window.location.href = '/auth';
+        throw new Error('Unauthorized');
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP Error: ${response.status}`);
+      }
+
+      // Handle no content responses
+      if (response.status === 204 || response.headers.get('content-length') === '0') {
+        return {} as T;
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('HTTP Request failed:', error);
+      throw error;
+    }
+  };
+
+  return { makeRequest };
+};
+
+export const httpClient = createHttpClient();

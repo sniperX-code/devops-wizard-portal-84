@@ -8,6 +8,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { CredentialsProvider } from "./contexts/CredentialsContext";
 import { InstanceProvider } from "./contexts/InstanceContext";
 import { AdminProvider } from "./contexts/AdminContext";
+import { RequireAuth } from "./components/auth/RequireAuth";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -40,17 +41,17 @@ const App = () => (
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/auth" element={<AuthPage />} />
                 
-                {/* User Routes */}
-                <Route path="/credentials" element={<CredentialsPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/instance" element={<InstancePage />} />
-                <Route path="/subscription" element={<SubscriptionPage />} />
+                {/* Protected User Routes */}
+                <Route path="/credentials" element={<RequireAuth><CredentialsPage /></RequireAuth>} />
+                <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
+                <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+                <Route path="/instance" element={<RequireAuth><InstancePage /></RequireAuth>} />
+                <Route path="/subscription" element={<RequireAuth><SubscriptionPage /></RequireAuth>} />
                 
-                {/* Admin Routes */}
-                <Route path="/admin" element={<AdminDashboardPage />} />
-                <Route path="/admin/instances" element={<AdminInstancesPage />} />
-                <Route path="/admin/users" element={<AdminUsersPage />} />
+                {/* Protected Admin Routes */}
+                <Route path="/admin" element={<RequireAuth><AdminDashboardPage /></RequireAuth>} />
+                <Route path="/admin/instances" element={<RequireAuth><AdminInstancesPage /></RequireAuth>} />
+                <Route path="/admin/users" element={<RequireAuth><AdminUsersPage /></RequireAuth>} />
                 
                 {/* Catch-all route for 404 */}
                 <Route path="*" element={<NotFound />} />
