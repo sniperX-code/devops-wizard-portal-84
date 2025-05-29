@@ -4,14 +4,23 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useInstance } from '@/contexts/InstanceContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import PricingCard, { PricingPlan } from '@/components/ui/PricingCard';
-import { useToast } from '@/hooks/use-toast';
+import { useSubscriptions, useSelectSubscription } from '@/hooks/useSubscriptions';
+import { useUserDetails } from '@/hooks/useUser';
+import { AlertCircle } from 'lucide-react';
 
 const SubscriptionPage: React.FC = () => {
   const { instance } = useInstance();
-  const { toast } = useToast();
   const [isYearly, setIsYearly] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(instance?.plan || 'free');
+  
+  // Use React Query hooks
+  const { data: subscriptions, isLoading: subscriptionsLoading, error: subscriptionsError } = useSubscriptions();
+  const { data: userDetails, isLoading: userLoading } = useUserDetails();
+  const selectSubscriptionMutation = useSelectSubscription();
+  
+  const selectedPlan = userDetails?.user?.subscription?.type || instance?.plan || 'free';
 
   // Define pricing plans
   const plans: PricingPlan[] = [
@@ -76,14 +85,65 @@ const SubscriptionPage: React.FC = () => {
   const handleSelectPlan = (plan: PricingPlan) => {
     if (plan.disabled) return;
     
-    if (plan.name.toLowerCase() !== selectedPlan) {
-      setSelectedPlan(plan.name.toLowerCase());
-      toast({
-        title: "Plan Selected",
-        description: `You've selected the ${plan.name} plan.`,
-      });
+    const planName = plan.name.toLowerCase();
+    if (planName !== selectedPlan) {
+      // Find the subscription ID for this plan type
+      const subscription = subscriptions?.find(sub => sub.type === planName);
+      if (subscription) {
+        selectSubscriptionMutation.mutate(subscription.id);
+      }
     }
   };
+
+  // Show loading state
+  if (subscriptionsLoading || userLoading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <h1 className="text-3xl font-bold mb-4">Subscription</h1>
+          <Skeleton className="h-4 w-64 mb-8" />
+          
+          <div className="flex justify-center items-center mb-8">
+            <Skeleton className="h-6 w-20" />
+            <Skeleton className="h-6 w-12 mx-4" />
+            <Skeleton className="h-6 w-32" />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="border rounded-lg p-6">
+                <Skeleton className="h-6 w-20 mb-4" />
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-4 w-full mb-4" />
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map((j) => (
+                    <Skeleton key={j} className="h-4 w-full" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show error state
+  if (subscriptionsError) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <h1 className="text-3xl font-bold mb-4">Subscription</h1>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load subscription data: {subscriptionsError.message}
+            </AlertDescription>
+          </Alert>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

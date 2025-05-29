@@ -1,217 +1,269 @@
 
 import React, { useState } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCredentials } from '@/contexts/CredentialsContext';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useUserDetails, useUpdateUser } from '@/hooks/useUser';
+import { useChangePassword } from '@/hooks/useAuth';
+import { AlertCircle, User } from 'lucide-react';
 
 const ProfilePage: React.FC = () => {
-  const { user, updateUserProfile } = useAuth();
-  const { credentials, resetCredentials } = useCredentials();
-  const { toast } = useToast();
+  const { data: userDetails, isLoading, error } = useUserDetails();
+  const updateUserMutation = useUpdateUser();
+  const changePasswordMutation = useChangePassword();
   
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    email: '',
+  });
+  
+  const [passwordForm, setPasswordForm] = useState({
+    email: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
-  const handleProfileUpdate = (e: React.FormEvent) => {
+  // Initialize form when data loads
+  React.useEffect(() => {
+    if (userDetails?.user) {
+      setProfileForm({
+        name: userDetails.user.name || '',
+        email: userDetails.user.email || '',
+      });
+      setPasswordForm(prev => ({
+        ...prev,
+        email: userDetails.user.email || '',
+      }));
+    }
+  }, [userDetails]);
+
+  const handleProfileSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateUserMutation.mutate({
+      name: profileForm.name,
+      email: profileForm.email,
+    });
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (password && password !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please ensure your passwords match.",
-        variant: "destructive",
-      });
-      return;
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      return; // Error handling should be in the form validation
     }
 
-    // Call the updateUserProfile function from AuthContext
-    if (user) {
-      const success = updateUserProfile({
-        name,
-        email,
-        password: password || undefined
-      });
-      
-      if (success) {
-        toast({
-          title: "Profile updated",
-          description: "Your profile has been successfully updated.",
-        });
-        setPassword('');
-        setConfirmPassword('');
-      }
-    }
+    changePasswordMutation.mutate({
+      email: passwordForm.email,
+      newPassword: passwordForm.newPassword,
+      confirmPassword: passwordForm.confirmPassword,
+    });
+    
+    // Reset password form on success
+    setPasswordForm(prev => ({
+      ...prev,
+      newPassword: '',
+      confirmPassword: '',
+    }));
   };
 
-  const handleResetCredentials = () => {
-    if (window.confirm("Are you sure you want to reset all your GitHub App credentials? This cannot be undone.")) {
-      resetCredentials();
-      toast({
-        title: "Credentials reset",
-        description: "All your GitHub App credentials have been reset.",
-      });
-    }
-  };
+  // Show loading state
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <h1 className="text-3xl font-bold mb-8">Profile</h1>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <Skeleton className="h-16 w-16 rounded-full" />
+                  <div>
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-24" />
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-24" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <h1 className="text-3xl font-bold mb-8">Profile</h1>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load profile data: {error.message}
+            </AlertDescription>
+          </Alert>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const user = userDetails?.user;
+  if (!user) return null;
 
   return (
-    <MainLayout>
-      <div className="container py-10">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Profile Settings</h1>
-            <ThemeToggle />
-          </div>
+    <DashboardLayout>
+      <div className="p-6">
+        <h1 className="text-3xl font-bold mb-8">Profile</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Profile Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Information</CardTitle>
+              <CardDescription>
+                Update your personal information and email address
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleProfileSubmit} className="space-y-4">
+                <div className="flex items-center space-x-4 mb-6">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback>
+                      <User className="h-8 w-8" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-lg font-medium">{user.name}</h3>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={profileForm.name}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter your full name"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="Enter your email"
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  disabled={updateUserMutation.isPending}
+                >
+                  {updateUserMutation.isPending ? 'Updating...' : 'Update Profile'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
           
-          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="credentials">Credentials</TabsTrigger>
-              <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="profile" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                  <CardDescription>
-                    Update your personal information here. Your name will be visible to other users.
-                  </CardDescription>
-                </CardHeader>
-                <form onSubmit={handleProfileUpdate}>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Name</Label>
-                      <Input 
-                        id="name" 
-                        type="text" 
-                        value={name} 
-                        onChange={(e) => setName(e.target.value)} 
-                        placeholder="Your name" 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Your email" 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">New Password (leave blank to keep current)</Label>
-                      <Input 
-                        id="password" 
-                        type="password" 
-                        value={password} 
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="New password" 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                      <Input 
-                        id="confirmPassword" 
-                        type="password" 
-                        value={confirmPassword} 
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm new password" 
-                      />
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button type="submit">Save Changes</Button>
-                  </CardFooter>
-                </form>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="credentials" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>GitHub App Credentials</CardTitle>
-                  <CardDescription>
-                    Manage your GitHub App credentials used for DevOps integrations.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Webhook Proxy URL</Label>
-                    <div className="flex items-center gap-2">
-                      <Input value={credentials.webhookProxyUrl} readOnly className="bg-muted" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>App ID</Label>
-                    <div className="flex items-center gap-2">
-                      <Input value={credentials.appId} readOnly className="bg-muted" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Webhook Secret</Label>
-                    <div className="flex items-center gap-2">
-                      <Input value={credentials.webhookSecret ? "••••••••••••••••" : ""} readOnly className="bg-muted" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>GitHub Client ID</Label>
-                    <div className="flex items-center gap-2">
-                      <Input value={credentials.githubClientId} readOnly className="bg-muted" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>GitHub Client Secret</Label>
-                    <div className="flex items-center gap-2">
-                      <Input value={credentials.githubClientSecret ? "••••••••••••••••" : ""} readOnly className="bg-muted" />
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" onClick={() => window.location.href = "/credentials"}>
-                    Update Credentials
-                  </Button>
-                  <Button variant="destructive" className="ml-2" onClick={handleResetCredentials}>
-                    Reset Credentials
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="appearance" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Appearance</CardTitle>
-                  <CardDescription>
-                    Customize how DevOpsWizard looks for you.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-medium">Theme</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Select light mode, dark mode, or follow your system settings.
-                      </p>
-                    </div>
-                    <ThemeToggle />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          {/* Change Password */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Change Password</CardTitle>
+              <CardDescription>
+                Update your password to keep your account secure
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentEmail">Email</Label>
+                  <Input
+                    id="currentEmail"
+                    type="email"
+                    value={passwordForm.email}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                    placeholder="Enter new password"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="Confirm new password"
+                  />
+                </div>
+                
+                {passwordForm.newPassword !== passwordForm.confirmPassword && passwordForm.confirmPassword && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Passwords do not match
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                <Button 
+                  type="submit" 
+                  disabled={
+                    changePasswordMutation.isPending || 
+                    !passwordForm.newPassword || 
+                    passwordForm.newPassword !== passwordForm.confirmPassword
+                  }
+                >
+                  {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 };
 

@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { TokenManager } from '@/config/api';
+import { UserService } from '@/services/userService';
 
 // Define the User type
 export type User = {
@@ -24,7 +26,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (provider: 'google' | 'github') => void;
-  loginWithEmail: (email: string, password: string) => Promise<boolean>; // Added email login
+  loginWithEmail: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateUserProfile: (data: ProfileUpdateData) => boolean;
 };
@@ -44,22 +46,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Mock authentication for demo purposes
-  // In a real app, you would use an authentication service
+  // Bootstrap authentication on app start
   useEffect(() => {
-    const storedUser = localStorage.getItem('devops-user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('devops-user');
+    const bootstrapAuth = async () => {
+      const token = TokenManager.getToken();
+      if (token) {
+        try {
+          const response = await UserService.getUserDetails();
+          const userData: User = {
+            id: response.user.id,
+            name: response.user.name,
+            email: response.user.email,
+            avatar: response.user.avatar,
+            isAdmin: response.user.isAdmin || false,
+          };
+          setUser(userData);
+        } catch (error) {
+          console.error('Failed to bootstrap auth:', error);
+          // If token is invalid, remove it
+          TokenManager.removeToken();
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    bootstrapAuth();
   }, []);
 
-  // Mock login function
+  // Mock login function - in production, this would use the AuthService
   const login = (provider: 'google' | 'github') => {
     setIsLoading(true);
     
@@ -71,7 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         name: provider === 'google' ? 'Google User' : 'GitHub User',
         email: `user_${Math.floor(Math.random() * 1000)}@example.com`,
         avatar: `https://avatars.dicebear.com/api/initials/${provider === 'google' ? 'GU' : 'GH'}.svg`,
-        isAdmin: false, // Default to regular user
+        isAdmin: false,
       };
       
       setUser(mockUser);
@@ -87,7 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, 1500);
   };
 
-  // Email login/signup function
+  // Email login/signup function - in production, this would use the AuthService
   const loginWithEmail = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
@@ -102,7 +116,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // If user exists, check password
         if (users[email]) {
-          // In a real app, you would hash and compare passwords
           if (users[email].password === password) {
             currentUser = users[email].user;
           } else {
@@ -156,17 +169,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return false;
     
     try {
-      // Get the users database
       const usersString = localStorage.getItem('devops-users');
       const users = usersString ? JSON.parse(usersString) : {};
       
-      // Update the current user
       const updatedUser = { ...user };
       
       if (data.name) updatedUser.name = data.name;
       if (data.email && data.email !== user.email) {
-        // In a real app, you would verify the new email
-        // For now, we'll just check if it's already in use
         if (users[data.email] && users[data.email].user.id !== user.id) {
           toast({
             title: "Email already in use",
@@ -176,28 +185,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return false;
         }
         
-        // Update email in the database
         const userEntry = users[user.email];
-        delete users[user.email]; // Remove old entry
-        users[data.email] = userEntry; // Add new entry
+        delete users[user.email];
+        users[data.email] = userEntry;
         updatedUser.email = data.email;
       }
       
-      // Update password if provided
       if (data.password && user.email) {
         users[user.email || data.email || ''].password = data.password;
       }
       
-      // Update the user entry
       if (updatedUser.email) {
         users[updatedUser.email].user = updatedUser;
       }
       
-      // Save to localStorage
       localStorage.setItem('devops-users', JSON.stringify(users));
       localStorage.setItem('devops-user', JSON.stringify(updatedUser));
       
-      // Update state
       setUser(updatedUser);
       
       return true;
@@ -215,6 +219,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Logout function
   const logout = () => {
     setUser(null);
+    TokenManager.removeToken();
     localStorage.removeItem('devops-user');
     toast({
       title: "Logged out",
