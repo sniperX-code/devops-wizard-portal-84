@@ -16,6 +16,15 @@ export const API_CONFIG = {
       GET_ALL: '/subscriptions',
       SELECT: '/subscriptions/users', // /:subscriptionId will be appended
     },
+    INSTANCES: {
+      GET_ALL: '/instances',
+      CREATE: '/instances',
+      DELETE: '/instances', // /:instanceId will be appended
+    },
+    USER: {
+      GET_ME: '/me',
+      UPDATE_ME: '/me',
+    },
   },
   HEADERS: {
     'Content-Type': 'application/json',
