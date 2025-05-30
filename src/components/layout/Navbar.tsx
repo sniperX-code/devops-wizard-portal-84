@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -87,7 +86,7 @@ const Navbar: React.FC = () => {
               </DropdownMenu>
             ) : (
               <Button asChild>
-                <Link to="/auth">Login</Link>
+                <Link to="/signin">Login</Link>
               </Button>
             )}
           </nav>
@@ -137,7 +136,7 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <Button asChild className="w-full">
-                <Link to="/auth">Login</Link>
+                <Link to="/signin">Login</Link>
               </Button>
             )}
           </nav>

@@ -1,9 +1,11 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { TokenManager } from '@/config/api';
 import { UserService } from '@/services/userService';
 import { AuthService } from '@/services/authService';
+import { UserProfile } from '@/services/userService';
 
 // Define the User type
 export type User = {
@@ -15,9 +17,11 @@ export type User = {
 };
 
 type ProfileUpdateData = {
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
-  password?: string;
+  phoneNumber?: string;
+  location?: string;
 };
 
 // Define the Auth context type
@@ -113,13 +117,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [navigate, toast]);
 
-  // Email login/signup function - in production, this would use the AuthService
+  // Email login function
   const loginWithEmail = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       const response = await AuthService.signIn({ email, password });
       TokenManager.setToken(response.accessToken);
-      // Fetch user details as in OAuth
+      // Fetch user details
       const userResponse = await UserService.getUserDetails();
       const userData: User = {
         id: userResponse.user.id,
@@ -141,44 +145,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       return true;
     } catch (error: any) {
-      // If sign-in fails, try sign-up
-      try {
-        const response = await AuthService.signUp({
-          email,
-          password,
-          firstName: 'User',
-          lastName: email.split('@')[0],
-        });
-        TokenManager.setToken(response.accessToken);
-        const userResponse = await UserService.getUserDetails();
-        const userData: User = {
-          id: userResponse.user.id,
-          name: `${userResponse.user.firstName} ${userResponse.user.lastName}`.trim(),
-          email: userResponse.user.email,
-          isAdmin: false,
-        };
-        setUser(userData);
-        toast({
-          title: "Account created",
-          description: `Welcome, ${userData.name}!`,
-        });
-        setIsLoading(false);
-        // Check if config exists
-        if (userResponse.configuration) {
-          navigate('/dashboard');
-        } else {
-          navigate('/credentials');
-        }
-        return true;
-      } catch (signupError: any) {
-        toast({
-          title: "Login/Signup failed",
-          description: signupError.message || error.message || "An error occurred.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return false;
-      }
+      toast({
+        title: "Login failed",
+        description: error.message || "An error occurred during login.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return false;
     }
   };
 
@@ -187,38 +160,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return false;
     
     try {
-      const usersString = localStorage.getItem('devops-users');
-      const users = usersString ? JSON.parse(usersString) : {};
-      
       const updatedUser = { ...user };
       
-      if (data.name) updatedUser.name = data.name;
-      if (data.email && data.email !== user.email) {
-        if (users[data.email] && users[data.email].user.id !== user.id) {
-          toast({
-            title: "Email already in use",
-            description: "Please choose a different email address.",
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        const userEntry = users[user.email];
-        delete users[user.email];
-        users[data.email] = userEntry;
-        updatedUser.email = data.email;
+      if (data.firstName || data.lastName) {
+        updatedUser.name = `${data.firstName || user.name.split(' ')[0]} ${data.lastName || user.name.split(' ')[1] || ''}`.trim();
       }
-      
-      if (data.password && user.email) {
-        users[user.email || data.email || ''].password = data.password;
-      }
-      
-      if (updatedUser.email) {
-        users[updatedUser.email].user = updatedUser;
-      }
-      
-      localStorage.setItem('devops-users', JSON.stringify(users));
-      localStorage.setItem('devops-user', JSON.stringify(updatedUser));
+      if (data.email) updatedUser.email = data.email;
       
       setUser(updatedUser);
       
@@ -238,7 +185,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
     TokenManager.removeToken();
-    localStorage.removeItem('devops-user');
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",

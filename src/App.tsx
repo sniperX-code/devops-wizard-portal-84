@@ -15,6 +15,8 @@ import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import AuthPage from "./pages/AuthPage";
+import SignInPage from "./pages/SignInPage";
+import SignUpPage from "./pages/SignUpPage";
 import CredentialsPage from "./pages/CredentialsPage";
 import DashboardPage from "./pages/DashboardPage";
 import InstancePage from "./pages/InstancePage";

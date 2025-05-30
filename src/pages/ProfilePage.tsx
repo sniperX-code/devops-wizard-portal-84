@@ -1,264 +1,236 @@
 
-import React, { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/AuthContext';
 import { useUserDetails, useUpdateUser } from '@/hooks/useUser';
 import { useChangePassword } from '@/hooks/useAuth';
-import { AlertCircle, User } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ProfilePage: React.FC = () => {
+  const { user } = useAuth();
   const { data: userDetails, isLoading, error } = useUserDetails();
-  const updateUserMutation = useUpdateUser();
-  const changePasswordMutation = useChangePassword();
-  
-  const [profileForm, setProfileForm] = useState({
-    name: '',
-    email: '',
-  });
-  
-  const [passwordForm, setPasswordForm] = useState({
-    email: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
+  const updateUser = useUpdateUser();
+  const changePassword = useChangePassword();
+  const { toast } = useToast();
 
-  // Initialize form when data loads
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [location, setLocation] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Initialize form with user data
   React.useEffect(() => {
     if (userDetails?.user) {
-      setProfileForm({
-        name: userDetails.user.name || '',
-        email: userDetails.user.email || '',
-      });
-      setPasswordForm(prev => ({
-        ...prev,
-        email: userDetails.user.email || '',
-      }));
+      setFirstName(userDetails.user.firstName || '');
+      setLastName(userDetails.user.lastName || '');
+      setEmail(userDetails.user.email || '');
+      setPhoneNumber(userDetails.user.phoneNumber || '');
+      setLocation(userDetails.user.location || '');
     }
   }, [userDetails]);
 
-  const handleProfileSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateUserMutation.mutate({
-      name: profileForm.name,
-      email: profileForm.email,
+  const handleProfileUpdate = () => {
+    updateUser.mutate({
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+      location,
     });
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      return; // Error handling should be in the form validation
+  const handlePasswordChange = () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure your passwords match.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    changePasswordMutation.mutate({
-      email: passwordForm.email,
-      newPassword: passwordForm.newPassword,
-      confirmPassword: passwordForm.confirmPassword,
+    changePassword.mutate({
+      email: email,
+      newPassword,
+      passwordConfirmation: confirmPassword,
     });
-    
-    // Reset password form on success
-    setPasswordForm(prev => ({
-      ...prev,
-      newPassword: '',
-      confirmPassword: '',
-    }));
   };
 
-  // Show loading state
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="p-6">
-          <h1 className="text-3xl font-bold mb-8">Profile</h1>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-48" />
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <Skeleton className="h-16 w-16 rounded-full" />
-                  <div>
-                    <Skeleton className="h-4 w-24 mb-2" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                </div>
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-24" />
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-48" />
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-24" />
-              </CardContent>
-            </Card>
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="grid gap-6 md:grid-cols-2">
+            <Skeleton className="h-96" />
+            <Skeleton className="h-96" />
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <DashboardLayout>
-        <div className="p-6">
-          <h1 className="text-3xl font-bold mb-8">Profile</h1>
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to load profile data: {error.message}
-            </AlertDescription>
-          </Alert>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-bold text-destructive">Error Loading Profile</h2>
+            <p className="text-muted-foreground">There was an error loading your profile. Please try again.</p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  const user = userDetails?.user;
-  if (!user) return null;
-
   return (
     <DashboardLayout>
-      <div className="p-6">
-        <h1 className="text-3xl font-bold mb-8">Profile</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Profile Settings</h1>
+          <p className="text-muted-foreground">
+            Manage your account settings and preferences.
+          </p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
           {/* Profile Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
+              <CardTitle className="flex items-center space-x-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={userDetails?.user?.avatar} alt={`${userDetails?.user?.firstName} ${userDetails?.user?.lastName}`} />
+                  <AvatarFallback>{`${userDetails?.user?.firstName?.[0] || ''}${userDetails?.user?.lastName?.[0] || ''}`}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-xl font-semibold">{`${userDetails?.user?.firstName} ${userDetails?.user?.lastName}`}</h3>
+                  <p className="text-muted-foreground">{userDetails?.user?.email}</p>
+                </div>
+              </CardTitle>
               <CardDescription>
-                Update your personal information and email address
+                Update your personal information and contact details.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleProfileSubmit} className="space-y-4">
-                <div className="flex items-center space-x-4 mb-6">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback>
-                      <User className="h-8 w-8" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="text-lg font-medium">{user.name}</h3>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                  </div>
-                </div>
-                
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="firstName">First Name</Label>
                   <Input
-                    id="name"
-                    value={profileForm.name}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter your full name"
+                    id="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Enter your first name"
                   />
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="lastName">Last Name</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    value={profileForm.email}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="Enter your email"
+                    id="lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Enter your last name"
                   />
                 </div>
-                
-                <Button 
-                  type="submit" 
-                  disabled={updateUserMutation.isPending}
-                >
-                  {updateUserMutation.isPending ? 'Updating...' : 'Update Profile'}
-                </Button>
-              </form>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="Enter your phone number"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Enter your location"
+                />
+              </div>
+              <Button 
+                onClick={handleProfileUpdate} 
+                className="w-full"
+                disabled={updateUser.isPending}
+              >
+                {updateUser.isPending ? 'Updating...' : 'Update Profile'}
+              </Button>
             </CardContent>
           </Card>
-          
-          {/* Change Password */}
+
+          {/* Security Settings */}
           <Card>
             <CardHeader>
-              <CardTitle>Change Password</CardTitle>
+              <CardTitle>Security Settings</CardTitle>
               <CardDescription>
-                Update your password to keep your account secure
+                Change your password and manage security preferences.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="currentEmail">Email</Label>
-                  <Input
-                    id="currentEmail"
-                    type="email"
-                    value={passwordForm.email}
-                    disabled
-                    className="bg-muted"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                    placeholder="Enter new password"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={passwordForm.confirmPassword}
-                    onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                    placeholder="Confirm new password"
-                  />
-                </div>
-                
-                {passwordForm.newPassword !== passwordForm.confirmPassword && passwordForm.confirmPassword && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Passwords do not match
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                <Button 
-                  type="submit" 
-                  disabled={
-                    changePasswordMutation.isPending || 
-                    !passwordForm.newPassword || 
-                    passwordForm.newPassword !== passwordForm.confirmPassword
-                  }
-                >
-                  {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
-                </Button>
-              </form>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                />
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                />
+              </div>
+              <Button 
+                onClick={handlePasswordChange} 
+                className="w-full" 
+                variant="outline"
+                disabled={changePassword.isPending}
+              >
+                {changePassword.isPending ? 'Changing...' : 'Change Password'}
+              </Button>
             </CardContent>
           </Card>
         </div>
