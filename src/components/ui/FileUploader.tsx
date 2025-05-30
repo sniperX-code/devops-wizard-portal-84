@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -55,19 +54,24 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
   const handleFile = (file: File) => {
     setError(null);
-    
-    // Check file type
-    if (accept && !file.type.includes('json')) {
-      setError('Invalid file type. Please upload a JSON file.');
-      return;
+
+    // Check file extension against accept prop
+    if (accept) {
+      const allowedExts = accept.split(',').map(ext => ext.trim().toLowerCase());
+      const fileName = file.name.toLowerCase();
+      const hasAllowedExt = allowedExts.some(ext => fileName.endsWith(ext));
+      if (!hasAllowedExt) {
+        setError(`Invalid file type. Please upload a file of type: ${allowedExts.join(', ')}`);
+        return;
+      }
     }
-    
+
     // Check file size
     if (file.size > maxSize * 1024 * 1024) {
       setError(`File is too large. Maximum size is ${maxSize}MB.`);
       return;
     }
-    
+
     setFileName(file.name);
     
     const reader = new FileReader();

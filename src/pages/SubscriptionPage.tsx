@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -94,7 +93,7 @@ const SubscriptionPage: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {plan.features.map((feature, index) => (
+                    {(plan.features ?? []).map((feature, index) => (
                       <li key={index} className="flex items-center">
                         {feature.included ? (
                           <Check className="h-4 w-4 text-green-500 mr-2" />

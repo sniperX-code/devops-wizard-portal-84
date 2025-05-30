@@ -24,18 +24,21 @@ const CredentialsPage: React.FC = () => {
     }
   }, [isSubmitted, navigate]);
 
-  // Handle JSON file upload
+  // Handle file upload
   const handlePrivateKeyUpload = (fileContent: string) => {
     try {
+      if (!fileContent || typeof fileContent !== 'string' || fileContent.trim().length === 0) {
+        throw new Error('Private Key is required and must be a string.');
+      }
       updateCredentials('privateKey', fileContent);
       toast({
         title: "File Uploaded",
         description: "Private key file has been uploaded successfully.",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to parse the private key file. Please make sure it's a valid JSON.",
+        description: error.message || "Failed to parse the private key file.",
         variant: "destructive"
       });
     }
@@ -82,7 +85,7 @@ const CredentialsPage: React.FC = () => {
       }
     }
     // Validate privateKey
-    if (!credentials.privateKey || typeof credentials.privateKey !== 'string' || credentials.privateKey.length === 0) {
+    if (!credentials.privateKey || typeof credentials.privateKey !== 'string' || credentials.privateKey.trim().length === 0) {
       toast({
         title: "Validation Error",
         description: "Private Key is required and must be a string.",
@@ -162,10 +165,10 @@ const CredentialsPage: React.FC = () => {
                   <Label>PRIVATE_KEY</Label>
                   <FileUploader
                     onFileSelect={handlePrivateKeyUpload}
-                    accept=".json"
+                    accept=".pem,.key,.txt"
                     className="mt-1"
                   />
-                  <p className="text-sm text-muted-foreground">Upload the JSON file containing your private key</p>
+                  <p className="text-sm text-muted-foreground">Upload the PEM file containing your private key (e.g., devops-llm-bot-app.2025-05-30.private-key.pem)</p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
