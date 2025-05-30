@@ -8,7 +8,8 @@ import {
   CreditCard,
   BarChart3,
   Users,
-  LogOut 
+  LogOut,
+  User
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { icon: Home, label: 'Dashboard', path: '/dashboard' },
     { icon: Server, label: 'Instance', path: '/instance' },
     { icon: CreditCard, label: 'Subscription', path: '/subscription' },
-    { icon: Settings, label: 'Settings', path: '/settings' },
+    { icon: User, label: 'Profile Details', path: '/me' },
+    { icon: Settings, label: 'Settings', path: '/profile' },
   ];
   
   // Admin-only menu items
@@ -47,7 +49,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         {/* Logo and collapse button */}
         <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
           {!collapsed && (
-            <Link to="/dashboard" className="font-bold text-xl text-sidebar-foreground">
+            <Link to="/" className="font-bold text-xl text-sidebar-foreground">
               DevOps<span className="text-devops-blue">Wizard</span>
             </Link>
           )}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,7 +65,10 @@ const Navbar: React.FC = () => {
                     <Link to="/dashboard">Dashboard</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/profile">Profile Settings</Link>
+                    <Link to="/me">Profile Details</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">Settings</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/instance">My Instance</Link>
@@ -125,7 +129,8 @@ const Navbar: React.FC = () => {
               <>
                 <div className="py-2 border-t border-border">
                   <Link to="/dashboard" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">Dashboard</Link>
-                  <Link to="/profile" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">Profile Settings</Link>
+                  <Link to="/me" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">Profile Details</Link>
+                  <Link to="/profile" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">Settings</Link>
                   <Link to="/instance" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">My Instance</Link>
                   <Link to="/subscription" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">Subscription</Link>
                   {user?.isAdmin && (

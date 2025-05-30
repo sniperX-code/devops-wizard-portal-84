@@ -22,6 +22,7 @@ import DashboardPage from "./pages/DashboardPage";
 import InstancePage from "./pages/InstancePage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import ProfilePage from "./pages/ProfilePage";
+import ProfileDetailsPage from "./pages/ProfileDetailsPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminInstancesPage from "./pages/AdminInstancesPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
@@ -49,6 +50,7 @@ const App = () => (
                 <Route path="/credentials" element={<RequireAuth><CredentialsPage /></RequireAuth>} />
                 <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
                 <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+                <Route path="/me" element={<RequireAuth><ProfileDetailsPage /></RequireAuth>} />
                 <Route path="/instance" element={<RequireAuth><InstancePage /></RequireAuth>} />
                 <Route path="/subscription" element={<RequireAuth><SubscriptionPage /></RequireAuth>} />
                 
