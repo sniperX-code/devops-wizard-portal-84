@@ -10,17 +10,25 @@ export function useUserDetails() {
       try {
         return await UserService.getUserDetails();
       } catch (error) {
-        // Return mock user data with subscription
+        // Return mock user data with correct structure
         return {
-          id: '1',
-          name: 'John Doe',
-          email: 'john@example.com',
+          user: {
+            id: '1',
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john@example.com',
+            phoneNumber: '+1234567890',
+            location: 'New York, NY',
+            avatar: '',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            lastUpdated: '2024-01-01T00:00:00.000Z'
+          },
           subscription: {
             id: 'sbu_JrZ9xoiIerqSB5KsL0DD',
-            plan: 'Free',
+            plan: 'free',
             status: 'active'
           }
-        };
+        } as UserDetailsResponse;
       }
     },
   });
