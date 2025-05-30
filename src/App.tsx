@@ -42,6 +42,8 @@ const App = () => (
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/auth" element={<AuthPage />} />
+                <Route path="/signin" element={<SignInPage />} />
+                <Route path="/signup" element={<SignUpPage />} />
                 
                 {/* Protected User Routes */}
                 <Route path="/credentials" element={<RequireAuth><CredentialsPage /></RequireAuth>} />
