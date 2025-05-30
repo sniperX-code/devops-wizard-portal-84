@@ -1,9 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { TokenManager } from '@/config/api';
 import { UserService } from '@/services/userService';
+import { AuthService } from '@/services/authService';
 
 // Define the User type
 export type User = {
@@ -55,10 +55,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const response = await UserService.getUserDetails();
           const userData: User = {
             id: response.user.id,
-            name: response.user.name,
+            name: `${response.user.firstName} ${response.user.lastName}`.trim(),
             email: response.user.email,
-            avatar: response.user.avatar,
-            isAdmin: response.user.isAdmin || false,
+            isAdmin: false,
           };
           setUser(userData);
         } catch (error) {
@@ -73,95 +72,73 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     bootstrapAuth();
   }, []);
 
-  // Mock login function - in production, this would use the AuthService
+  // Real login function for OAuth
   const login = (provider: 'google' | 'github') => {
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      // Create mock user data
-      const mockUser: User = {
-        id: Math.random().toString(36).substring(2, 9),
-        name: provider === 'google' ? 'Google User' : 'GitHub User',
-        email: `user_${Math.floor(Math.random() * 1000)}@example.com`,
-        avatar: `https://avatars.dicebear.com/api/initials/${provider === 'google' ? 'GU' : 'GH'}.svg`,
-        isAdmin: false,
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('devops-user', JSON.stringify(mockUser));
-      setIsLoading(false);
-      
-      toast({
-        title: "Successfully logged in",
-        description: `Welcome, ${mockUser.name}!`,
-      });
-      
-      navigate('/credentials');
-    }, 1500);
+    // Redirect to backend OAuth endpoint
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://your-api-base-url.com/api';
+    window.location.href = `${baseUrl}/auth/${provider}`;
   };
+
+  // Handle OAuth callback (parse token from URL)
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const accessToken = url.searchParams.get('accessToken');
+    if (accessToken) {
+      TokenManager.setToken(accessToken);
+      // Remove token from URL
+      url.searchParams.delete('accessToken');
+      window.history.replaceState({}, document.title, url.pathname);
+      // Fetch user details
+      UserService.getUserDetails().then((response) => {
+        const userData: User = {
+          id: response.user.id,
+          name: `${response.user.firstName} ${response.user.lastName}`.trim(),
+          email: response.user.email,
+          isAdmin: false,
+        };
+        setUser(userData);
+        navigate('/credentials');
+        toast({
+          title: 'Login successful',
+          description: `Welcome, ${userData.name}!`,
+        });
+      }).catch(() => {
+        TokenManager.removeToken();
+      });
+    }
+  }, [navigate, toast]);
 
   // Email login/signup function - in production, this would use the AuthService
   const loginWithEmail = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    
-    // Check if user exists in localStorage (mock database)
-    const usersString = localStorage.getItem('devops-users');
-    const users = usersString ? JSON.parse(usersString) : {};
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let currentUser;
-        let isNewUser = false;
-        
-        // If user exists, check password
-        if (users[email]) {
-          if (users[email].password === password) {
-            currentUser = users[email].user;
-          } else {
-            toast({
-              title: "Login failed",
-              description: "Incorrect password. Please try again.",
-              variant: "destructive",
-            });
-            setIsLoading(false);
-            resolve(false);
-            return;
-          }
-        } else {
-          // User doesn't exist, create a new account
-          isNewUser = true;
-          const name = email.split('@')[0];
-          currentUser = {
-            id: Math.random().toString(36).substring(2, 9),
-            name: name.charAt(0).toUpperCase() + name.slice(1),
-            email: email,
-            avatar: `https://avatars.dicebear.com/api/initials/${name.substring(0, 2).toUpperCase()}.svg`,
-            isAdmin: false,
-          };
-          
-          // Store user in "database"
-          users[email] = {
-            password: password,
-            user: currentUser
-          };
-          localStorage.setItem('devops-users', JSON.stringify(users));
-        }
-        
-        // Set user in state and localStorage
-        setUser(currentUser);
-        localStorage.setItem('devops-user', JSON.stringify(currentUser));
-        
-        toast({
-          title: isNewUser ? "Account created successfully" : "Login successful",
-          description: `Welcome${isNewUser ? ' to DevOpsWizard' : ''}, ${currentUser.name}!`,
-        });
-        
-        setIsLoading(false);
-        navigate('/credentials');
-        resolve(true);
-      }, 1500);
-    });
+    try {
+      const response = await AuthService.signIn({ email, password });
+      TokenManager.setToken(response.accessToken);
+      // Fetch user details as in OAuth
+      const userResponse = await UserService.getUserDetails();
+      const userData: User = {
+        id: userResponse.user.id,
+        name: `${userResponse.user.firstName} ${userResponse.user.lastName}`.trim(),
+        email: userResponse.user.email,
+        isAdmin: false,
+      };
+      setUser(userData);
+      toast({
+        title: "Login successful",
+        description: `Welcome, ${userData.name}!`,
+      });
+      setIsLoading(false);
+      navigate('/credentials');
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "An error occurred.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return false;
+    }
   };
 
   // Update user profile
