@@ -4,6 +4,14 @@ import { httpClient, API_CONFIG } from '@/config/api';
 export interface Subscription {
   id: string;
   type: string;
+  name: string;
+  description: string;
+  price: number;
+  interval: string;
+  features: Array<{
+    name: string;
+    included: boolean;
+  }>;
 }
 
 export interface UserSubscriptionResponse {
