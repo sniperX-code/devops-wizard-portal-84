@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,16 +11,25 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Mail, Key } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { AuthService } from '@/services/authService';
 
 // Define form schema
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
+  firstName: z.string().min(1, { message: "First name is required" })
+    .regex(/^[a-zA-Z\s]*$/, { message: "First name must contain only letters" })
+    .max(100, { message: "First name must be at most 100 characters" }),
+  lastName: z.string().min(1, { message: "Last name is required" })
+    .regex(/^[a-zA-Z\s]*$/, { message: "Last name must contain only letters" })
+    .max(100, { message: "Last name must be at most 100 characters" }),
 });
 
 const AuthPage: React.FC = () => {
   const { isAuthenticated, login, loginWithEmail, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -29,6 +37,8 @@ const AuthPage: React.FC = () => {
     defaultValues: {
       email: "",
       password: "",
+      firstName: "",
+      lastName: "",
     },
   });
 
@@ -40,8 +50,29 @@ const AuthPage: React.FC = () => {
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
-    await loginWithEmail(values.email, values.password);
-    setIsSubmitting(false);
+    try {
+      // Try sign-in first
+      const signInResult = await loginWithEmail(values.email, values.password);
+      if (!signInResult) {
+        // If sign-in fails, try sign-up
+        await AuthService.signUp({
+          email: values.email,
+          password: values.password,
+          firstName: values.firstName,
+          lastName: values.lastName
+        });
+        // After successful sign-up, try sign-in again
+        await loginWithEmail(values.email, values.password);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Authentication failed",
+        description: error.message || "An error occurred during authentication",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -59,6 +90,46 @@ const AuthPage: React.FC = () => {
               {/* Email and password login form */}
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 mb-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input 
+                                placeholder="John" 
+                                {...field} 
+                                disabled={isSubmitting}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input 
+                                placeholder="Doe" 
+                                {...field} 
+                                disabled={isSubmitting}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <FormField
                     control={form.control}
                     name="email"

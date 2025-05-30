@@ -2,6 +2,7 @@ import { httpClient, API_CONFIG } from '@/config/api';
 
 // Types for configuration
 export interface ConfigRequest {
+  id?: string;
   webhookProxyUrl: string;
   appId: string;
   privateKey: string;
@@ -29,6 +30,15 @@ export class ConfigService {
       {
         method: 'PUT',
         body: JSON.stringify(data),
+      }
+    );
+  }
+
+  static async getConfigs(): Promise<ConfigRequest | null> {
+    return httpClient.makeRequest<ConfigRequest | null>(
+      API_CONFIG.ENDPOINTS.CONFIGS.CREATE, // GET /configs
+      {
+        method: 'GET',
       }
     );
   }

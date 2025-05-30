@@ -97,7 +97,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           isAdmin: false,
         };
         setUser(userData);
-        navigate('/credentials');
+        // Check if config exists
+        if (response.configuration) {
+          navigate('/dashboard');
+        } else {
+          navigate('/credentials');
+        }
         toast({
           title: 'Login successful',
           description: `Welcome, ${userData.name}!`,
@@ -128,16 +133,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         description: `Welcome, ${userData.name}!`,
       });
       setIsLoading(false);
-      navigate('/credentials');
+      // Check if config exists
+      if (userResponse.configuration) {
+        navigate('/dashboard');
+      } else {
+        navigate('/credentials');
+      }
       return true;
     } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: error.message || "An error occurred.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return false;
+      // If sign-in fails, try sign-up
+      try {
+        const response = await AuthService.signUp({
+          email,
+          password,
+          firstName: 'User',
+          lastName: email.split('@')[0],
+        });
+        TokenManager.setToken(response.accessToken);
+        const userResponse = await UserService.getUserDetails();
+        const userData: User = {
+          id: userResponse.user.id,
+          name: `${userResponse.user.firstName} ${userResponse.user.lastName}`.trim(),
+          email: userResponse.user.email,
+          isAdmin: false,
+        };
+        setUser(userData);
+        toast({
+          title: "Account created",
+          description: `Welcome, ${userData.name}!`,
+        });
+        setIsLoading(false);
+        // Check if config exists
+        if (userResponse.configuration) {
+          navigate('/dashboard');
+        } else {
+          navigate('/credentials');
+        }
+        return true;
+      } catch (signupError: any) {
+        toast({
+          title: "Login/Signup failed",
+          description: signupError.message || error.message || "An error occurred.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return false;
+      }
     }
   };
 

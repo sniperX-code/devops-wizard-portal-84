@@ -1,6 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { useCreateConfig, useUpdateConfig } from '@/hooks/useConfig';
+import { useQuery } from '@tanstack/react-query';
+import { UserService } from '@/services/userService';
+import { ConfigService } from '@/services/configService';
 
 // Define the credentials type
 export type Credentials = {
@@ -45,50 +48,47 @@ type CredentialsProviderProps = {
 export const CredentialsProvider: React.FC<CredentialsProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const [credentials, setCredentials] = useState<Credentials>(initialCredentials);
+  const [configId, setConfigId] = useState<string | null>(null);
+  const { mutate: createConfig } = useCreateConfig();
+  const { mutate: updateConfig } = useUpdateConfig();
 
-  // Load credentials from localStorage on component mount
-  useEffect(() => {
-    if (user) {
-      const storedCredentials = localStorage.getItem(`devops-credentials-${user.id}`);
-      if (storedCredentials) {
-        try {
-          setCredentials(JSON.parse(storedCredentials));
-        } catch (error) {
-          console.error('Error parsing stored credentials:', error);
-          localStorage.removeItem(`devops-credentials-${user.id}`);
-        }
-      }
+  // Fetch configs for the user from API
+  const { data: configs, refetch } = useQuery({
+    queryKey: ['user', 'configs'],
+    queryFn: ConfigService.getConfigs,
+    enabled: !!user,
+  });
+
+  // Sync credentials and configId when configs change
+  React.useEffect(() => {
+    if (configs) {
+      setCredentials({ ...configs, submitted: true });
+      setConfigId(configs.id);
+    } else {
+      setCredentials(initialCredentials);
+      setConfigId(null);
     }
-  }, [user]);
+  }, [configs]);
 
-  // Update credentials
+  // Update credentials in state
   const updateCredentials = (field: keyof Credentials, value: string) => {
-    setCredentials(prev => {
-      const updated = { ...prev, [field]: value };
-      if (user) {
-        localStorage.setItem(`devops-credentials-${user.id}`, JSON.stringify(updated));
-      }
-      return updated;
-    });
+    setCredentials(prev => ({ ...prev, [field]: value }));
   };
 
-  // Submit credentials
+  // Submit credentials to API (create or update config)
   const submitCredentials = () => {
-    setCredentials(prev => {
-      const updated = { ...prev, submitted: true };
-      if (user) {
-        localStorage.setItem(`devops-credentials-${user.id}`, JSON.stringify(updated));
-      }
-      return updated;
-    });
+    const { submitted, ...configData } = credentials;
+    if (configId) {
+      updateConfig({ id: configId, data: configData }, { onSuccess: () => refetch() });
+    } else {
+      createConfig(configData, { onSuccess: () => refetch() });
+    }
   };
 
-  // Reset credentials
+  // Reset credentials (delete config is not specified, so just clear state)
   const resetCredentials = () => {
     setCredentials(initialCredentials);
-    if (user) {
-      localStorage.removeItem(`devops-credentials-${user.id}`);
-    }
+    setConfigId(null);
   };
 
   return (

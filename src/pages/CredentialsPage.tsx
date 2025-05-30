@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,8 +27,6 @@ const CredentialsPage: React.FC = () => {
   // Handle JSON file upload
   const handlePrivateKeyUpload = (fileContent: string) => {
     try {
-      // For demo purposes, we're just storing the raw content
-      // In a real app, you might want to validate this is actually JSON
       updateCredentials('privateKey', fileContent);
       toast({
         title: "File Uploaded",
@@ -45,32 +42,71 @@ const CredentialsPage: React.FC = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation
-    if (!credentials.webhookProxyUrl || !credentials.appId || !credentials.webhookSecret || 
-        !credentials.privateKey || !credentials.githubClientId || !credentials.githubClientSecret) {
+    // Validate webhookProxyUrl as a URL
+    try {
+      new URL(credentials.webhookProxyUrl);
+    } catch {
       toast({
         title: "Validation Error",
-        description: "Please fill in all the required fields.",
+        description: "Webhook Proxy URL must be a valid URL.",
         variant: "destructive"
       });
       return;
     }
-    
+    // Validate string fields and max length
+    const stringFields = [
+      { key: 'appId', label: 'App ID' },
+      { key: 'webhookSecret', label: 'Webhook Secret' },
+      { key: 'githubClientId', label: 'GitHub Client ID' },
+      { key: 'githubClientSecret', label: 'GitHub Client Secret' },
+    ];
+    for (const { key, label } of stringFields) {
+      const value = credentials[key as keyof typeof credentials];
+      if (!value || typeof value !== 'string' || value.length === 0) {
+        toast({
+          title: "Validation Error",
+          description: `${label} is required and must be a string.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      if (value.length > 200) {
+        toast({
+          title: "Validation Error",
+          description: `${label} must be at most 200 characters.`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    // Validate privateKey
+    if (!credentials.privateKey || typeof credentials.privateKey !== 'string' || credentials.privateKey.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Private Key is required and must be a string.",
+        variant: "destructive"
+      });
+      return;
+    }
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      submitCredentials();
+    try {
+      await submitCredentials();
       toast({
         title: "Credentials Saved",
         description: "Your credentials have been saved successfully.",
       });
       navigate('/dashboard');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to save credentials.',
+        variant: "destructive"
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
   return (
