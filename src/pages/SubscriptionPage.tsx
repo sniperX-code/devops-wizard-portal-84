@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUserDetails } from '@/hooks/useUser';
-import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { useSubscriptions, useSelectSubscription } from '@/hooks/useSubscriptions';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Check, X } from 'lucide-react';
@@ -11,13 +12,14 @@ import { Check, X } from 'lucide-react';
 const SubscriptionPage: React.FC = () => {
   const { data: userDetails, isLoading: userLoading } = useUserDetails();
   const { data: subscriptions, isLoading: subscriptionsLoading } = useSubscriptions();
+  const selectSubscription = useSelectSubscription();
 
   const isLoading = userLoading || subscriptionsLoading;
 
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="space-y-6">
+        <div className="p-6 space-y-6">
           <Skeleton className="h-8 w-48" />
           <div className="grid gap-6 md:grid-cols-3">
             <Skeleton className="h-96" />
@@ -31,9 +33,17 @@ const SubscriptionPage: React.FC = () => {
 
   const currentSubscription = userDetails?.subscription;
 
+  const handleSelectPlan = async (planId: string) => {
+    try {
+      await selectSubscription.mutateAsync(planId);
+    } catch (error) {
+      console.error('Failed to select subscription:', error);
+    }
+  };
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="p-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Subscription</h1>
           <p className="text-muted-foreground">
@@ -74,48 +84,52 @@ const SubscriptionPage: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold mb-4">Available Plans</h2>
           <div className="grid gap-6 md:grid-cols-3">
-            {subscriptions?.map((plan) => (
-              <Card key={plan.id} className={currentSubscription?.id === plan.id ? 'border-primary' : ''}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    {plan.name}
-                    {currentSubscription?.id === plan.id && (
-                      <Badge variant="default">Current</Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                  <div className="text-3xl font-bold">
-                    ${plan.price}
-                    <span className="text-sm font-normal text-muted-foreground">
-                      /{plan.interval}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {(plan.features ?? []).map((feature, index) => (
-                      <li key={index} className="flex items-center">
-                        {feature.included ? (
-                          <Check className="h-4 w-4 text-green-500 mr-2" />
-                        ) : (
-                          <X className="h-4 w-4 text-red-500 mr-2" />
-                        )}
-                        <span className={!feature.included ? 'text-muted-foreground line-through' : ''}>
-                          {feature.name}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button 
-                    className="w-full mt-4" 
-                    variant={currentSubscription?.id === plan.id ? 'outline' : 'default'}
-                    disabled={currentSubscription?.id === plan.id}
-                  >
-                    {currentSubscription?.id === plan.id ? 'Current Plan' : 'Select Plan'}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+            {subscriptions?.map((plan) => {
+              const isCurrentPlan = currentSubscription?.id === plan.id;
+              return (
+                <Card key={plan.id} className={isCurrentPlan ? 'border-primary ring-2 ring-primary/20' : ''}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      {plan.name}
+                      {isCurrentPlan && (
+                        <Badge variant="default">Current</Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                    <div className="text-3xl font-bold">
+                      ${plan.price}
+                      <span className="text-sm font-normal text-muted-foreground">
+                        /{plan.interval}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2 mb-4">
+                      {(plan.features ?? []).map((feature, index) => (
+                        <li key={index} className="flex items-center">
+                          {feature.included ? (
+                            <Check className="h-4 w-4 text-green-500 mr-2" />
+                          ) : (
+                            <X className="h-4 w-4 text-red-500 mr-2" />
+                          )}
+                          <span className={!feature.included ? 'text-muted-foreground line-through' : ''}>
+                            {feature.name}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button 
+                      className="w-full" 
+                      variant={isCurrentPlan ? 'outline' : 'default'}
+                      disabled={isCurrentPlan || selectSubscription.isPending}
+                      onClick={() => !isCurrentPlan && handleSelectPlan(plan.id)}
+                    >
+                      {selectSubscription.isPending ? 'Processing...' : isCurrentPlan ? 'Current Plan' : 'Select Plan'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </div>
