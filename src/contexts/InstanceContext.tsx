@@ -1,7 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { InstanceService } from '@/services/instanceService';
+import { UserService } from '@/services/userService';
 
 // Define the instance type
 export type InstanceStatus = 'creating' | 'running' | 'stopped' | 'error';
@@ -57,171 +58,90 @@ export const InstanceProvider: React.FC<InstanceProviderProps> = ({ children }) 
     networkOut: Array(24).fill(0).map(() => Math.random() * 30),
   });
 
-  // Load instance from localStorage on component mount
-  useEffect(() => {
-    if (user) {
-      setIsLoading(true);
-      const storedInstance = localStorage.getItem(`devops-instance-${user.id}`);
-      if (storedInstance) {
-        try {
-          setInstance(JSON.parse(storedInstance));
-        } catch (error) {
-          console.error('Error parsing stored instance:', error);
-          localStorage.removeItem(`devops-instance-${user.id}`);
-          setError('Failed to load instance data');
-        }
-      }
-      setIsLoading(false);
-    } else {
+  // Fetch instance from backend on mount and when user changes
+  const fetchInstance = async () => {
+    if (!user) {
       setInstance(null);
+      setIsLoading(false);
+      return;
     }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const userDetails = await UserService.getUserDetails();
+      setInstance(userDetails.instance || null);
+    } catch (err: any) {
+      setError('Failed to fetch instance');
+      setInstance(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInstance();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Mock function to create instance
+  // Create instance via backend
   const createInstance = async (name: string) => {
     setIsLoading(true);
     setError(null);
-    
-    // Simulate API call
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        if (!user) {
-          setError('User not authenticated');
-          setIsLoading(false);
-          return;
-        }
-        
-        // Create mock instance
-        const newInstance: Instance = {
-          id: Math.random().toString(36).substring(2, 9),
-          name,
-          status: 'creating',
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString(),
-          cpu: 2,
-          memory: 4,
-          storage: 20,
-          plan: 'free'
-        };
-        
-        setInstance(newInstance);
-        localStorage.setItem(`devops-instance-${user.id}`, JSON.stringify(newInstance));
-        
-        // Simulate instance creation
-        setTimeout(() => {
-          const updatedInstance: Instance = {
-            ...newInstance,
-            status: 'running',
-            lastUpdated: new Date().toISOString()
-          };
-          setInstance(updatedInstance);
-          localStorage.setItem(`devops-instance-${user.id}`, JSON.stringify(updatedInstance));
-          
-          toast({
-            title: "Instance Created",
-            description: `Your instance ${name} is now running!`,
-          });
-        }, 3000);
-        
-        setIsLoading(false);
-        resolve();
-      }, 1500);
-    });
-  };
-
-  // Mock function to start instance
-  const startInstance = async () => {
-    if (!instance) {
-      setError('No instance available');
-      return Promise.reject('No instance available');
+    try {
+      await InstanceService.createInstance({ name });
+      toast({
+        title: 'Instance Created',
+        description: `Your instance ${name} is now running!`,
+      });
+      await fetchInstance();
+    } catch (err: any) {
+      setError(err.message || 'Failed to create instance');
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to create instance.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(true);
-    
-    // Simulate API call
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        const updatedInstance: Instance = { 
-          ...instance, 
-          status: 'running', 
-          lastUpdated: new Date().toISOString() 
-        };
-        setInstance(updatedInstance);
-        if (user) {
-          localStorage.setItem(`devops-instance-${user.id}`, JSON.stringify(updatedInstance));
-        }
-        setIsLoading(false);
-        
-        toast({
-          title: "Instance Started",
-          description: `Your instance ${instance.name} is now running!`,
-        });
-        
-        resolve();
-      }, 1500);
-    });
   };
 
-  // Mock function to stop instance
-  const stopInstance = async () => {
-    if (!instance) {
-      setError('No instance available');
-      return Promise.reject('No instance available');
-    }
-    
-    setIsLoading(true);
-    
-    // Simulate API call
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        const updatedInstance: Instance = { 
-          ...instance, 
-          status: 'stopped', 
-          lastUpdated: new Date().toISOString() 
-        };
-        setInstance(updatedInstance);
-        if (user) {
-          localStorage.setItem(`devops-instance-${user.id}`, JSON.stringify(updatedInstance));
-        }
-        setIsLoading(false);
-        
-        toast({
-          title: "Instance Stopped",
-          description: `Your instance ${instance.name} has been stopped.`,
-        });
-        
-        resolve();
-      }, 1500);
-    });
-  };
-
-  // Mock function to delete instance
+  // Delete instance via backend
   const deleteInstance = async () => {
     if (!instance) {
       setError('No instance available');
       return Promise.reject('No instance available');
     }
-    
     setIsLoading(true);
-    
-    // Simulate API call
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        setInstance(null);
-        if (user) {
-          localStorage.removeItem(`devops-instance-${user.id}`);
-        }
-        setIsLoading(false);
-        
-        toast({
-          title: "Instance Deleted",
-          description: `Your instance ${instance.name} has been deleted.`,
-          variant: "destructive"
-        });
-        
-        resolve();
-      }, 1500);
-    });
+    setError(null);
+    try {
+      await InstanceService.deleteInstance(instance.id);
+      toast({
+        title: 'Instance Deleted',
+        description: `Your instance ${instance.name} has been deleted.`,
+        variant: 'destructive',
+      });
+      await fetchInstance();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete instance');
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to delete instance.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // The following are placeholders; implement start/stop as needed with real API
+  const startInstance = async () => {
+    toast({ title: 'Not implemented', description: 'Start instance is not implemented in backend.' });
+    return Promise.resolve();
+  };
+  const stopInstance = async () => {
+    toast({ title: 'Not implemented', description: 'Stop instance is not implemented in backend.' });
+    return Promise.resolve();
   };
 
   // Update instance stats periodically when running
@@ -235,7 +155,6 @@ export const InstanceProvider: React.FC<InstanceProviderProps> = ({ children }) 
           networkOut: [...prev.networkOut.slice(1), Math.random() * 30],
         }));
       }, 5000);
-      
       return () => clearInterval(interval);
     }
   }, [instance?.status]);

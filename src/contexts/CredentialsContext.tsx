@@ -4,6 +4,7 @@ import { useCreateConfig, useUpdateConfig } from '@/hooks/useConfig';
 import { useQuery } from '@tanstack/react-query';
 import { UserService } from '@/services/userService';
 import { ConfigService } from '@/services/configService';
+import { z } from 'zod';
 
 // Define the credentials type
 export type Credentials = {

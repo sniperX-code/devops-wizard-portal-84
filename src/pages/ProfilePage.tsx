@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,20 @@ import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Skeleton } from '@/components/ui/skeleton';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const profileSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').max(100, 'Max 100 characters').regex(/^[a-zA-Z\s]*$/, 'Only letters allowed'),
+  lastName: z.string().min(1, 'Last name is required').max(100, 'Max 100 characters').regex(/^[a-zA-Z\s]*$/, 'Only letters allowed'),
+  email: z.string().email('Invalid email').max(200, 'Max 200 characters'),
+  phoneNumber: z.string().optional(),
+  location: z.string().max(100, 'Max 100 characters').optional(),
+  currentPassword: z.string().optional(),
+  newPassword: z.string().optional(),
+  confirmPassword: z.string().optional(),
+});
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
@@ -21,38 +34,42 @@ const ProfilePage: React.FC = () => {
   const changePassword = useChangePassword();
   const { toast } = useToast();
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [location, setLocation] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const form = useForm<z.infer<typeof profileSchema>>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phoneNumber: '',
+      location: '',
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+  });
 
   // Initialize form with user data
   React.useEffect(() => {
     if (userDetails?.user) {
-      setFirstName(userDetails.user.firstName || '');
-      setLastName(userDetails.user.lastName || '');
-      setEmail(userDetails.user.email || '');
-      setPhoneNumber(userDetails.user.phoneNumber || '');
-      setLocation(userDetails.user.location || '');
+      form.reset({
+        firstName: userDetails.user.firstName || '',
+        lastName: userDetails.user.lastName || '',
+        email: userDetails.user.email || '',
+        phoneNumber: userDetails.user.phoneNumber || '',
+        location: userDetails.user.location || '',
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
     }
-  }, [userDetails]);
+  }, [userDetails, form]);
 
-  const handleProfileUpdate = () => {
-    updateUser.mutate({
-      firstName,
-      lastName,
-      email,
-      phoneNumber,
-      location,
-    });
-  };
+  const handleProfileUpdate = form.handleSubmit((values) => {
+    updateUser.mutate(values);
+  });
 
-  const handlePasswordChange = () => {
-    if (newPassword !== confirmPassword) {
+  const handlePasswordChange = form.handleSubmit((values) => {
+    if (values.newPassword !== values.confirmPassword) {
       toast({
         title: "Passwords don't match",
         description: "Please make sure your passwords match.",
@@ -60,13 +77,12 @@ const ProfilePage: React.FC = () => {
       });
       return;
     }
-
     changePassword.mutate({
-      email: email,
-      newPassword,
-      passwordConfirmation: confirmPassword,
+      email: values.email,
+      password: values.newPassword || '',
+      passwordConfirmation: values.confirmPassword || '',
     });
-  };
+  });
 
   if (isLoading) {
     return (
@@ -124,62 +140,39 @@ const ProfilePage: React.FC = () => {
                 Update your personal information and contact details.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Enter your first name"
-                  />
+            <CardContent>
+              <form onSubmit={handleProfileUpdate} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input id="firstName" {...form.register('firstName')} placeholder="Enter your first name" />
+                    {form.formState.errors.firstName && <p className="text-destructive text-xs">{form.formState.errors.firstName.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input id="lastName" {...form.register('lastName')} placeholder="Enter your last name" />
+                    {form.formState.errors.lastName && <p className="text-destructive text-xs">{form.formState.errors.lastName.message}</p>}
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Enter your last name"
-                  />
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" {...form.register('email')} placeholder="Enter your email" disabled />
+                  {form.formState.errors.email && <p className="text-destructive text-xs">{form.formState.errors.email.message}</p>}
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Enter your phone number"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Enter your location"
-                />
-              </div>
-              <Button 
-                onClick={handleProfileUpdate} 
-                className="w-full"
-                disabled={updateUser.isPending}
-              >
-                {updateUser.isPending ? 'Updating...' : 'Update Profile'}
-              </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input id="phone" {...form.register('phoneNumber')} placeholder="Enter your phone number" />
+                  {form.formState.errors.phoneNumber && <p className="text-destructive text-xs">{form.formState.errors.phoneNumber.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location</Label>
+                  <Input id="location" {...form.register('location')} placeholder="Enter your location" />
+                  {form.formState.errors.location && <p className="text-destructive text-xs">{form.formState.errors.location.message}</p>}
+                </div>
+                <Button type="submit" className="w-full" disabled={updateUser.isPending}>
+                  {updateUser.isPending ? 'Updating...' : 'Update Profile'}
+                </Button>
+              </form>
             </CardContent>
           </Card>
 
@@ -192,45 +185,27 @@ const ProfilePage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
-                />
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                />
-              </div>
-              <Button 
-                onClick={handlePasswordChange} 
-                className="w-full" 
-                variant="outline"
-                disabled={changePassword.isPending}
-              >
-                {changePassword.isPending ? 'Changing...' : 'Change Password'}
-              </Button>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Input id="currentPassword" type="password" {...form.register('currentPassword')} placeholder="Enter current password" />
+                  {form.formState.errors.currentPassword && <p className="text-destructive text-xs">{form.formState.errors.currentPassword.message}</p>}
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input id="newPassword" type="password" {...form.register('newPassword')} placeholder="Enter new password" />
+                  {form.formState.errors.newPassword && <p className="text-destructive text-xs">{form.formState.errors.newPassword.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input id="confirmPassword" type="password" {...form.register('confirmPassword')} placeholder="Confirm new password" />
+                  {form.formState.errors.confirmPassword && <p className="text-destructive text-xs">{form.formState.errors.confirmPassword.message}</p>}
+                </div>
+                <Button type="submit" className="w-full" variant="outline" disabled={changePassword.isPending}>
+                  {changePassword.isPending ? 'Changing...' : 'Change Password'}
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </div>

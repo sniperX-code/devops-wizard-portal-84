@@ -1,4 +1,3 @@
-
 import { httpClient } from '@/config/api';
 import { API_CONFIG, TokenManager } from '@/config/api';
 
@@ -19,7 +18,7 @@ export interface SignInRequest {
 
 export interface ChangePasswordRequest {
   email: string;
-  newPassword: string;
+  password: string;
   passwordConfirmation: string;
 }
 
