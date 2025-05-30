@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,59 @@ import { useUserDetails } from '@/hooks/useUser';
 import { useSubscriptions, useSelectSubscription } from '@/hooks/useSubscriptions';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Check, Zap, Crown, Rocket } from 'lucide-react';
+import { Check, Zap, Crown, Rocket, X } from 'lucide-react';
+
+// Local mapping for subscription plans
+const PLAN_DETAILS: Record<string, {
+  name: string;
+  description: string;
+  price: number;
+  interval: string;
+  features: Array<{ name: string; included: boolean }>;
+}> = {
+  free: {
+    name: 'Free',
+    description: 'Perfect for getting started',
+    price: 0,
+    interval: 'month',
+    features: [
+      { name: '5 Projects', included: true },
+      { name: 'Basic Support', included: true },
+      { name: '1GB Storage', included: true },
+      { name: 'Advanced Analytics', included: false },
+      { name: 'Priority Support', included: false },
+      { name: 'Custom Integrations', included: false }
+    ]
+  },
+  basic: {
+    name: 'Basic',
+    description: 'Great for small teams',
+    price: 9,
+    interval: 'month',
+    features: [
+      { name: '25 Projects', included: true },
+      { name: 'Email Support', included: true },
+      { name: '10GB Storage', included: true },
+      { name: 'Advanced Analytics', included: true },
+      { name: 'Priority Support', included: false },
+      { name: 'Custom Integrations', included: false }
+    ]
+  },
+  pro: {
+    name: 'Pro',
+    description: 'Perfect for growing businesses',
+    price: 29,
+    interval: 'month',
+    features: [
+      { name: 'Unlimited Projects', included: true },
+      { name: 'Priority Support', included: true },
+      { name: '100GB Storage', included: true },
+      { name: 'Advanced Analytics', included: true },
+      { name: 'Custom Integrations', included: true },
+      { name: 'API Access', included: true }
+    ]
+  }
+};
 
 const SubscriptionPage: React.FC = () => {
   const { data: userDetails, isLoading: userLoading } = useUserDetails();
@@ -36,7 +87,16 @@ const SubscriptionPage: React.FC = () => {
     );
   }
 
-  const currentSubscription = userDetails?.subscription;
+  // Get current subscription details from type
+  const currentSubscriptionType = userDetails?.subscription?.type;
+  const currentSubscription = currentSubscriptionType ? PLAN_DETAILS[currentSubscriptionType] : undefined;
+
+  // Compose available plans from backend types
+  const availablePlans = subscriptions?.map((sub) => ({
+    ...PLAN_DETAILS[sub.type],
+    type: sub.type,
+    id: sub.id // always use backend id for API calls
+  })) ?? [];
 
   const handleSelectPlan = async (planId: string) => {
     try {
@@ -94,149 +154,107 @@ const SubscriptionPage: React.FC = () => {
               <div className="mt-8 inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-2">
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                 <span className="text-sm font-medium text-blue-700">
-                  Currently on {currentSubscription.plan.charAt(0).toUpperCase() + currentSubscription.plan.slice(1)} Plan
+                  Currently on {currentSubscription.name} Plan
                 </span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          <div className="grid gap-8 lg:grid-cols-3 lg:gap-6">
-            {subscriptions?.map((plan) => {
-              const isCurrentPlan = currentSubscription?.id === plan.id;
-              const popular = isPopular(plan.type);
-              
-              return (
-                <div key={plan.id} className={`relative ${popular ? 'lg:scale-105 lg:z-10' : ''}`}>
-                  {/* Popular Badge */}
-                  {popular && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
-                      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-                        Most Popular
-                      </div>
-                    </div>
-                  )}
-                  
-                  <Card className={`relative h-full transition-all duration-300 hover:shadow-2xl ${
-                    isCurrentPlan 
-                      ? 'ring-2 ring-blue-500 shadow-xl' 
-                      : popular 
-                        ? 'border-green-200 shadow-xl' 
-                        : 'hover:shadow-lg'
-                  }`}>
-                    {/* Plan Header */}
-                    <CardHeader className="text-center pb-8 pt-8">
-                      <div className="flex justify-center mb-4">
-                        {getPlanIcon(plan.type)}
-                      </div>
-                      
-                      <CardTitle className="text-2xl font-bold mb-2">
-                        {plan.name}
-                      </CardTitle>
-                      
-                      <CardDescription className="text-base text-gray-600 mb-6">
-                        {plan.description}
-                      </CardDescription>
-                      
-                      {/* Price */}
-                      <div className="space-y-2">
-                        <div className="flex items-baseline justify-center">
-                          <span className="text-5xl font-bold text-gray-900">
-                            ${plan.price}
-                          </span>
-                          <span className="text-lg font-medium text-gray-500 ml-1">
-                            /{plan.interval}
-                          </span>
-                        </div>
-                        {plan.price > 0 && (
-                          <p className="text-sm text-gray-500">
-                            Billed {plan.interval}ly
-                          </p>
-                        )}
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="px-6 pb-8">
-                      {/* Features List */}
-                      <ul className="space-y-4 mb-8">
-                        {(plan.features ?? []).map((feature, index) => (
-                          <li key={index} className="flex items-start">
-                            <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 mr-3 ${
-                              feature.included 
-                                ? 'bg-green-100 text-green-600' 
-                                : 'bg-gray-100 text-gray-400'
-                            }`}>
-                              <Check className="h-3 w-3" />
-                            </div>
-                            <span className={`text-sm ${
-                              feature.included 
-                                ? 'text-gray-700' 
-                                : 'text-gray-400 line-through'
-                            }`}>
-                              {feature.name}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-
-                      {/* Action Button */}
-                      <Button 
-                        className={`w-full h-12 text-base font-semibold transition-all duration-200 ${
-                          isCurrentPlan
-                            ? 'bg-gray-100 text-gray-600 cursor-default hover:bg-gray-100'
-                            : popular
-                              ? `bg-gradient-to-r ${getPlanColor(plan.type)} hover:shadow-lg transform hover:-translate-y-0.5`
-                              : 'hover:shadow-lg transform hover:-translate-y-0.5'
-                        }`}
-                        variant={isCurrentPlan ? 'outline' : popular ? 'default' : 'outline'}
-                        disabled={isCurrentPlan || selectSubscription.isPending}
-                        onClick={() => !isCurrentPlan && handleSelectPlan(plan.id)}
-                      >
-                        {selectSubscription.isPending ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Processing...
-                          </div>
-                        ) : isCurrentPlan ? (
-                          <div className="flex items-center gap-2">
-                            <Check className="h-4 w-4" />
-                            Current Plan
-                          </div>
-                        ) : (
-                          `Get Started with ${plan.name}`
-                        )}
-                      </Button>
-
-                      {/* Additional Info */}
-                      {isCurrentPlan && (
-                        <div className="mt-4 text-center">
-                          <Badge variant="outline" className="text-xs text-blue-600 border-blue-200">
-                            Active Subscription
-                          </Badge>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+        {/* Current Subscription */}
+        {currentSubscription && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Current Subscription
+                <Badge variant="default">{currentSubscription.name}</Badge>
+              </CardTitle>
+              <CardDescription>
+                Your current subscription details and usage.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-sm font-medium">Plan</p>
+                  <p className="text-2xl font-bold">{currentSubscription.name}</p>
                 </div>
+                <div>
+                  <p className="text-sm font-medium">Status</p>
+                  <Badge variant={userDetails?.subscription?.status === 'active' ? 'default' : 'destructive'}>
+                    {userDetails?.subscription?.status}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Available Plans */}
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Available Plans</h2>
+          <div className="grid gap-6 md:grid-cols-3">
+            {availablePlans.map((plan) => {
+              const isCurrentPlan = currentSubscriptionType === plan.type;
+              return (
+                <Card key={plan.type} className={isCurrentPlan ? 'border-primary ring-2 ring-primary/20' : ''}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      {plan.name}
+                      {isCurrentPlan && (
+                        <Badge variant="default">Current</Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                    <div className="text-3xl font-bold">
+                      ${plan.price}
+                      <span className="text-sm font-normal text-muted-foreground">
+                        /{plan.interval}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2 mb-4">
+                      {(plan.features ?? []).map((feature, index) => (
+                        <li key={index} className="flex items-center">
+                          {feature.included ? (
+                            <Check className="h-4 w-4 text-green-500 mr-2" />
+                          ) : (
+                            <X className="h-4 w-4 text-red-500 mr-2" />
+                          )}
+                          <span className={!feature.included ? 'text-muted-foreground line-through' : ''}>
+                            {feature.name}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button 
+                      className="w-full" 
+                      variant={isCurrentPlan ? 'outline' : 'default'}
+                      disabled={isCurrentPlan || selectSubscription.isPending}
+                      onClick={() => !isCurrentPlan && handleSelectPlan(plan.id)}
+                    >
+                      {selectSubscription.isPending ? 'Processing...' : isCurrentPlan ? 'Current Plan' : 'Select Plan'}
+                    </Button>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
+        </div>
 
-          {/* Bottom CTA Section */}
-          <div className="mt-16 text-center space-y-4">
-            <h3 className="text-2xl font-semibold text-gray-900">
-              Need a custom solution?
-            </h3>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              For enterprise teams with specific requirements, we offer custom plans 
-              with dedicated support and tailored features.
-            </p>
-            <Button variant="outline" className="mt-4">
-              Contact Sales
-            </Button>
-          </div>
+        {/* Bottom CTA Section */}
+        <div className="mt-16 text-center space-y-4">
+          <h3 className="text-2xl font-semibold text-gray-900">
+            Need a custom solution?
+          </h3>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            For enterprise teams with specific requirements, we offer custom plans 
+            with dedicated support and tailored features.
+          </p>
+          <Button variant="outline" className="mt-4">
+            Contact Sales
+          </Button>
         </div>
       </div>
     </DashboardLayout>
