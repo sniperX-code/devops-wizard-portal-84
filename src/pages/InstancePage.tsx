@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useInstance } from '@/contexts/InstanceContext';
@@ -16,6 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Server, Activity, HardDrive, Database } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const InstancePage: React.FC = () => {
   const { instance, isLoading, startInstance, stopInstance, deleteInstance } = useInstance();
@@ -120,7 +121,16 @@ const InstancePage: React.FC = () => {
                   <CardTitle className="text-2xl">{instance.name}</CardTitle>
                   <CardDescription className="mt-2 flex items-center">
                     <StatusBadge status={instance.status} className="mr-2" />
-                    <span>Created on {new Date(instance.createdAt).toLocaleDateString()}</span>
+                    {instance.status === 'running' && (
+                      <span className="flex items-center gap-1 ml-2">
+                        <span className="inline-block w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-green-700 font-semibold text-sm">Active</span>
+                      </span>
+                    )}
+                    {instance.status !== 'running' && (
+                      <span className="text-muted-foreground ml-2">{instance.status ? instance.status.charAt(0).toUpperCase() + instance.status.slice(1) : 'Unknown'}</span>
+                    )}
+                    <span className="ml-4">Created on {new Date(instance.createdAt).toLocaleDateString()}</span>
                   </CardDescription>
                 </div>
                 
@@ -159,7 +169,14 @@ const InstancePage: React.FC = () => {
                       </div>
                       <div className="flex justify-between py-2 border-b">
                         <span className="text-muted-foreground">Status</span>
-                        <span className="font-medium capitalize">{instance.status}</span>
+                        <span className="font-medium capitalize">
+                          {instance.status === 'running' ? (
+                            <span className="flex items-center gap-1">
+                              <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                              Active
+                            </span>
+                          ) : (instance.status ? instance.status.charAt(0).toUpperCase() + instance.status.slice(1) : 'Unknown')}
+                        </span>
                       </div>
                       <div className="flex justify-between py-2 border-b">
                         <span className="text-muted-foreground">Created</span>
@@ -208,26 +225,47 @@ const InstancePage: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Instance logs */}
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Recent Logs</h3>
-                  <div className="bg-devops-navy text-white p-4 rounded-lg h-40 overflow-y-auto text-sm font-mono">
-                    {instance.status === 'running' ? (
-                      <pre className="whitespace-pre-wrap">
-                        {`[2025-05-09 12:34:12] INFO: Instance ${instance.name} is running
-[2025-05-09 12:34:10] INFO: Kubernetes cluster initialized
-[2025-05-09 12:34:08] INFO: Loading LLM models...
-[2025-05-09 12:34:05] INFO: Setting up networking...
-[2025-05-09 12:34:01] INFO: Starting instance...
-[2025-05-09 12:34:00] INFO: Instance boot sequence initiated`}
-                      </pre>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-white/70">
-                        <p>No logs available - Instance is not running</p>
+                {/* Fake interactive chart and logs when running */}
+                {instance.status === 'running' && (
+                  <div className="grid md:grid-cols-2 gap-8 mt-8">
+                    {/* Fake Chart */}
+                    <div className="bg-white rounded-xl shadow p-6">
+                      <h4 className="font-semibold mb-4">CPU Usage (Fake Data)</h4>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <LineChart data={[
+                          { time: '10:00', value: 30 },
+                          { time: '10:05', value: 45 },
+                          { time: '10:10', value: 60 },
+                          { time: '10:15', value: 50 },
+                          { time: '10:20', value: 70 },
+                          { time: '10:25', value: 55 },
+                          { time: '10:30', value: 65 },
+                        ]}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="time" />
+                          <YAxis />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="value" stroke="#6366F1" strokeWidth={2} dot={false} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {/* Fake Logs */}
+                    <div className="bg-white rounded-xl shadow p-6">
+                      <h4 className="font-semibold mb-4">Recent Logs (Fake Data)</h4>
+                      <div className="h-48 overflow-y-auto text-xs font-mono bg-gray-50 rounded p-2 border border-gray-100">
+                        <div className="mb-2 text-green-600">[10:00:01] Instance started successfully.</div>
+                        <div className="mb-2 text-blue-600">[10:01:15] Health check passed.</div>
+                        <div className="mb-2 text-yellow-600">[10:03:42] CPU usage spike detected.</div>
+                        <div className="mb-2 text-blue-600">[10:05:00] Health check passed.</div>
+                        <div className="mb-2 text-green-600">[10:10:00] Autoscaling event: +1 vCPU.</div>
+                        <div className="mb-2 text-blue-600">[10:15:00] Health check passed.</div>
+                        <div className="mb-2 text-gray-600">[10:20:00] Scheduled backup completed.</div>
+                        <div className="mb-2 text-blue-600">[10:25:00] Health check passed.</div>
+                        <div className="mb-2 text-green-600">[10:30:00] Instance running smoothly.</div>
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </CardContent>
             

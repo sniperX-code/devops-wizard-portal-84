@@ -105,7 +105,7 @@ const SubscriptionPage: React.FC = () => {
             Choose Your Plan
           </h1>
           <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-            Flexible subscription tiers to grow with your team’s needs.
+            Flexible subscription tiers to grow with your team's needs.
           </p>
           {currentPlan && (
             <div className="mt-6 inline-flex items-center gap-2 bg-white/80 backdrop-blur-md border border-gray-200 rounded-full px-4 py-2">

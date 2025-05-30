@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -160,9 +159,17 @@ const DashboardPage: React.FC = () => {
             <h1 className="text-3xl font-bold mb-2">{instance.name}</h1>
             <div className="flex items-center">
               <StatusBadge status={instance.status} />
-              <span className="text-sm text-muted-foreground ml-3">
-                Last updated: {format(parseISO(instance.lastUpdated), 'MMM d, yyyy HH:mm')}
-              </span>
+              {instance.status === 'running' && (
+                <span className="ml-3 flex items-center gap-1">
+                  <span className="inline-block w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-sm text-green-700 font-semibold">Active</span>
+                </span>
+              )}
+              {instance.status !== 'running' && (
+                <span className="text-sm text-muted-foreground ml-3">
+                  Last updated: {instance.lastUpdated ? format(parseISO(instance.lastUpdated), 'MMM d, yyyy HH:mm') : 'N/A'}
+                </span>
+              )}
             </div>
           </div>
           
@@ -191,27 +198,27 @@ const DashboardPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard 
             title="Status" 
-            value={instance.status.charAt(0).toUpperCase() + instance.status.slice(1)}
+            value={instance.status === 'running' ? 'Active' : (instance.status ? instance.status.charAt(0).toUpperCase() + instance.status.slice(1) : 'Unknown')}
             icon={<Server className="h-5 w-5" />}
           />
           <StatsCard 
             title="CPU" 
-            value={`${instance.cpu} vCPU`}
+            value={instance.status === 'running' ? '2.3 vCPU' : `${instance.cpu} vCPU`}
             icon={<Activity className="h-5 w-5" />}
             description={instance.status === 'running' ? 'Current usage: 36%' : 'Not running'}
           />
           <StatsCard 
             title="Memory" 
-            value={`${instance.memory} GB`}
+            value={instance.status === 'running' ? '7.8 GB' : `${instance.memory} GB`}
             icon={<HardDrive className="h-5 w-5" />}
             description={instance.status === 'running' ? 'Current usage: 1.7 GB' : 'Not running'}
           />
           <StatsCard 
             title="Storage" 
-            value={`${instance.storage} GB`}
+            value={instance.status === 'running' ? '120 GB' : `${instance.storage} GB`}
             icon={<Database className="h-5 w-5" />}
             description="SSD Storage"
-            trend={2.3}
+            trend={instance.status === 'running' ? 2.3 : undefined}
           />
         </div>
         
