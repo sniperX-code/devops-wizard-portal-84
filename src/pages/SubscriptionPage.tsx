@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,7 +64,7 @@ const SubscriptionPage: React.FC = () => {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="min-h-screen bg-gradient-to-tr from-indigo-50 to-white p-6">
+        <div className="min-h-screen bg-background p-6">
           <div className="max-w-3xl mx-auto space-y-8">
             <Skeleton className="h-14 w-full rounded-md" />
             <Skeleton className="h-6 w-4/5 rounded-md mx-auto" />
@@ -98,18 +99,18 @@ const SubscriptionPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-tr from-indigo-50 to-white">
+      <div className="min-h-screen bg-background">
         {/* Hero */}
         <section className="text-center pt-20 pb-16 px-4">
           <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
             Choose Your Plan
           </h1>
-          <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
             Flexible subscription tiers to grow with your team's needs.
           </p>
           {currentPlan && (
-            <div className="mt-6 inline-flex items-center gap-2 bg-white/80 backdrop-blur-md border border-gray-200 rounded-full px-4 py-2">
-              <span className="text-sm font-medium text-gray-800">
+            <div className="mt-6 inline-flex items-center gap-2 bg-card border border-border rounded-full px-4 py-2">
+              <span className="text-sm font-medium text-card-foreground">
                 Current: {currentPlan.name}
               </span>
             </div>
@@ -125,22 +126,22 @@ const SubscriptionPage: React.FC = () => {
                 <Card 
                   key={plan.type}
                   className={`group transform hover:scale-105 transition shadow-lg rounded-2xl ${
-                    active ? 'border-primary ring-2 ring-primary/20' : 'border-transparent'
+                    active ? 'border-primary ring-2 ring-primary/20' : 'border-border'
                   }`}                
                 >
                   <CardHeader className="flex flex-col items-center pt-6">
-                    <div className="mb-3 p-3 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-full">
+                    <div className="mb-3 p-3 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-full">
                       {icons[plan.type] || icons.free}
                     </div>
                     <CardTitle className="text-xl font-semibold">
                       {plan.name}
                     </CardTitle>
-                    <CardDescription className="text-center text-gray-500">
+                    <CardDescription className="text-center">
                       {plan.description}
                     </CardDescription>
-                    <div className="mt-3 text-3xl font-bold">
+                    <div className="mt-3 text-3xl font-bold text-foreground">
                       ${plan.price}
-                      <span className="text-sm text-gray-500">/{plan.interval}</span>
+                      <span className="text-sm text-muted-foreground">/{plan.interval}</span>
                     </div>
                     {active && (
                       <Badge className="mt-2" variant="default">
@@ -155,9 +156,9 @@ const SubscriptionPage: React.FC = () => {
                           {f.included ? (
                             <Check className="h-5 w-5 text-green-500 mr-2" />
                           ) : (
-                            <X className="h-5 w-5 text-red-300 mr-2" />
+                            <X className="h-5 w-5 text-muted-foreground mr-2" />
                           )}
-                          <span className={f.included ? '' : 'text-gray-400 line-through'}>
+                          <span className={f.included ? 'text-foreground' : 'text-muted-foreground line-through'}>
                             {f.name}
                           </span>
                         </li>
@@ -183,11 +184,11 @@ const SubscriptionPage: React.FC = () => {
         </section>
 
         {/* Footer CTA */}
-        <section className="bg-white py-12 text-center">
-          <h3 className="text-2xl font-semibold text-gray-900">
+        <section className="bg-card py-12 text-center border-t border-border">
+          <h3 className="text-2xl font-semibold text-card-foreground">
             Need something custom?
           </h3>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-muted-foreground">
             Contact our sales team for enterprise solutions and custom integrations.
           </p>
           <Button variant="outline" className="mt-4">
