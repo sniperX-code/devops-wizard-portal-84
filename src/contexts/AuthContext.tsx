@@ -80,7 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = (provider: 'google' | 'github') => {
     // Redirect to backend OAuth endpoint
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://your-api-base-url.com/api';
-    window.location.href = `${baseUrl}/auth/${provider}`;
+    window.location.href = `${baseUrl}/auth/oauth/${provider}`;
   };
 
   // Handle OAuth callback (parse token from URL)
@@ -165,15 +165,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(false);
       
       // No longer redirect based on isAdmin here; that's handled by config check above
-      if (userData.isAdmin) {
-        // If admin, still allow admin page access regardless of config
-        // This part needs careful consideration based on exact admin flow. For now, keep as is if no config for admin
-        // If you want admins to always go to admin page, move this condition before config check
-        // For simplicity, let's assume admin also needs config or goes to credentials for now
-        // If admin always goes to /admin, this block can be outside the config check
-        // but within the overall successful login flow.
-        navigate('/admin'); // Assuming admin always goes to /admin regardless of config for now
-      }
+      // if (userData.isAdmin) {
+      //   // If admin, still allow admin page access regardless of config
+      //   // This part needs careful consideration based on exact admin flow. For now, keep as is if no config for admin
+      //   // If you want admins to always go to admin page, move this condition before config check
+      //   // For simplicity, let's assume admin also needs config or goes to credentials for now
+      //   // If admin always goes to /admin, this block can be outside the config check
+      //   // but within the overall successful login flow.
+      //   navigate('/admin'); // Assuming admin always goes to /admin regardless of config for now
+      // }
 
       return true;
     } catch (error: any) {

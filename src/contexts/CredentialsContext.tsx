@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { UserService } from '@/services/userService';
 import { ConfigService } from '@/services/configService';
 import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
 
 // Define the credentials type
 export type Credentials = {
@@ -52,6 +53,7 @@ export const CredentialsProvider: React.FC<CredentialsProviderProps> = ({ childr
   const [configId, setConfigId] = useState<string | null>(null);
   const { mutate: createConfig } = useCreateConfig();
   const { mutate: updateConfig } = useUpdateConfig();
+  const navigate = useNavigate();
 
   // Fetch configs for the user from API
   const { data: configs, refetch } = useQuery({
@@ -70,6 +72,12 @@ export const CredentialsProvider: React.FC<CredentialsProviderProps> = ({ childr
       setConfigId(null);
     }
   }, [configs]);
+
+  useEffect(() => {
+    if (!configs && user) {
+      navigate('/credentials');
+    }
+  }, [configs, user, navigate]);
 
   // Update credentials in state
   const updateCredentials = (field: keyof Credentials, value: string) => {

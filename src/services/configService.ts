@@ -13,6 +13,28 @@ export interface ConfigRequest {
 
 export interface ConfigUpdateRequest extends Partial<ConfigRequest> {}
 
+export interface MeResponse {
+  user: {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+    location: string;
+    isAdmin: boolean;
+    subscriptionId: string | null;
+  };
+  config: {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
+  instance: any | null;
+  subscription: any | null;
+}
+
 export class ConfigService {
   static async createConfig(data: ConfigRequest): Promise<void> {
     await httpClient.makeRequest<void>(
@@ -35,11 +57,12 @@ export class ConfigService {
   }
 
   static async getConfigs(): Promise<ConfigRequest | null> {
-    return httpClient.makeRequest<ConfigRequest | null>(
-      API_CONFIG.ENDPOINTS.CONFIGS.CREATE, // GET /configs
+    const response = await httpClient.makeRequest<MeResponse>(
+      API_CONFIG.ENDPOINTS.USER.GET_ME,
       {
         method: 'GET',
       }
     );
+    return response.config ? ({ id: response.config.id } as ConfigRequest) : null;
   }
 }
