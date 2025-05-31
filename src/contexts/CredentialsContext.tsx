@@ -65,8 +65,15 @@ export const CredentialsProvider: React.FC<CredentialsProviderProps> = ({ childr
   // Sync credentials and configId when configs change
   React.useEffect(() => {
     if (configs) {
-      setCredentials({ ...configs, submitted: true });
       setConfigId(configs.id);
+      // Initialize credentials with existing values or empty strings
+      // Note: `configs` from /me only contains id, createdAt, updatedAt.
+      // Other fields for Credentials type must be initialized from initialCredentials
+      // or fetched separately if needed.
+      setCredentials({
+        ...initialCredentials,
+        submitted: true,
+      });
     } else {
       setCredentials(initialCredentials);
       setConfigId(null);
@@ -99,9 +106,9 @@ export const CredentialsProvider: React.FC<CredentialsProviderProps> = ({ childr
     };
 
     if (configId) {
-      updateConfig({ id: configId, data: payloadToSend }, { onSuccess: () => refetch() });
+      updateConfig({ id: configId, data: payloadToSend }, { onSuccess: () => navigate('/dashboard') });
     } else {
-      createConfig(payloadToSend, { onSuccess: () => refetch() });
+      createConfig(payloadToSend, { onSuccess: () => navigate('/dashboard') });
     }
   };
 

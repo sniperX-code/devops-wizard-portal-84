@@ -13,6 +13,12 @@ export interface ConfigRequest {
 
 export interface ConfigUpdateRequest extends Partial<ConfigRequest> {}
 
+export interface UserConfig {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface MeResponse {
   user: {
     id: string;
@@ -56,13 +62,13 @@ export class ConfigService {
     );
   }
 
-  static async getConfigs(): Promise<ConfigRequest | null> {
+  static async getConfigs(): Promise<UserConfig | null> {
     const response = await httpClient.makeRequest<MeResponse>(
       API_CONFIG.ENDPOINTS.USER.GET_ME,
       {
         method: 'GET',
       }
     );
-    return response.config ? ({ id: response.config.id } as ConfigRequest) : null;
+    return response.config;
   }
 }

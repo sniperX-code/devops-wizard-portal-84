@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ConfigService, ConfigRequest, ConfigUpdateRequest } from '@/services/configService';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +9,7 @@ export function useCreateConfig() {
   return useMutation({
     mutationFn: (data: ConfigRequest) => ConfigService.createConfig(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user', 'details'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'configs'] });
       toast({
         title: "Configuration created",
         description: "Your configuration has been saved successfully.",
@@ -34,7 +33,7 @@ export function useUpdateConfig() {
     mutationFn: ({ id, data }: { id: string; data: ConfigUpdateRequest }) => 
       ConfigService.updateConfig(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user', 'details'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'configs'] });
       toast({
         title: "Configuration updated",
         description: "Your configuration has been updated successfully.",
