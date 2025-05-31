@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -40,44 +39,8 @@ const AdminInstancesPage: React.FC = () => {
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [planFilter, setPlanFilter] = useState<string>('all');
   const [instanceToDelete, setInstanceToDelete] = useState<string | null>(null);
   const [selectedInstance, setSelectedInstance] = useState<string | null>(null);
-
-  // Handle instance start
-  const handleStartInstance = async (instanceId: string) => {
-    try {
-      await startInstance(instanceId);
-      toast({
-        title: "Instance Started",
-        description: "The instance has been started successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to start the instance. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Handle instance stop
-  const handleStopInstance = async (instanceId: string) => {
-    try {
-      await stopInstance(instanceId);
-      toast({
-        title: "Instance Stopped",
-        description: "The instance has been stopped successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to stop the instance. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
 
   // Handle instance delete
   const handleDeleteInstance = async () => {
@@ -99,18 +62,14 @@ const AdminInstancesPage: React.FC = () => {
     }
   };
 
-  // Filter instances based on search term and filters
+  // Filter instances based on search term
   const filteredInstances = allInstances.filter(instance => {
     const matchesSearch = 
       instance.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       instance.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       instance.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${instance.user.firstName} ${instance.user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || instance.status === statusFilter;
-    const matchesPlan = planFilter === 'all' || instance.plan === planFilter;
-    
-    return matchesSearch && matchesStatus && matchesPlan;
+    return matchesSearch;
   });
 
   const selectedInstanceDetails = selectedInstance ? allInstances.find(inst => inst.id === selectedInstance) : null;
@@ -152,33 +111,6 @@ const AdminInstancesPage: React.FC = () => {
               className="w-full"
             />
           </div>
-          <div className="w-full md:w-48">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status: All" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="running">Running</SelectItem>
-                <SelectItem value="stopped">Stopped</SelectItem>
-                <SelectItem value="error">Error</SelectItem>
-                <SelectItem value="creating">Creating</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-full md:w-48">
-            <Select value={planFilter} onValueChange={setPlanFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Plan: All" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Plans</SelectItem>
-                <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="pro">Pro</SelectItem>
-                <SelectItem value="enterprise">Enterprise</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
         
         {/* Instances Grid */}
@@ -201,7 +133,7 @@ const AdminInstancesPage: React.FC = () => {
                         ID: {instance.id}
                       </CardDescription>
                     </div>
-                    <StatusBadge status={instance.status} size="sm" />
+                    <StatusBadge status="running" size="sm" />
                   </div>
                 </CardHeader>
                 
@@ -267,7 +199,7 @@ const AdminInstancesPage: React.FC = () => {
                               <div>
                                 <span className="text-muted-foreground">Status:</span>
                                 <div className="mt-1">
-                                  <StatusBadge status={instance.status} size="sm" />
+                                  <StatusBadge status="running" size="sm" />
                                 </div>
                               </div>
                               <div>
@@ -313,26 +245,6 @@ const AdminInstancesPage: React.FC = () => {
                         </div>
                       </DialogContent>
                     </Dialog>
-                    
-                    {instance.status === 'running' ? (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-orange-600 border-orange-200 hover:bg-orange-50"
-                        onClick={() => handleStopInstance(instance.id)}
-                      >
-                        Stop
-                      </Button>
-                    ) : instance.status === 'stopped' ? (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-green-600 border-green-200 hover:bg-green-50"
-                        onClick={() => handleStartInstance(instance.id)}
-                      >
-                        Start
-                      </Button>
-                    ) : null}
                     
                     <Button 
                       variant="outline" 

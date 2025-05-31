@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -101,8 +100,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           isAdmin: response.user.isAdmin || false, // Check for isAdmin property
         };
         setUser(userData);
-        // Check if config exists
-        if (response.configuration) {
+        console.log("OAuth Callback - UserDetailsResponse.configuration:", response.configuration);
+        console.log("OAuth Callback - Full UserDetailsResponse:", response);
+        // Check if config exists and is not an empty object
+        if (response.configuration && Object.keys(response.configuration).length > 0) {
           navigate('/dashboard');
         } else {
           navigate('/credentials');
@@ -132,6 +133,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAdmin: userResponse.user.isAdmin || false, // Check for isAdmin property
       };
       setUser(userData);
+      console.log("Email Login - UserDetailsResponse.configuration:", userResponse.configuration);
+      console.log("Email Login - Full UserDetailsResponse:", userResponse);
       toast({
         title: "Login successful",
         description: `Welcome, ${userData.name}!`,
@@ -142,8 +145,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userData.isAdmin) {
         navigate('/admin');
       } else {
-        // Check if config exists for regular users
-        if (userResponse.configuration) {
+        console.log("Email Login - UserDetailsResponse.configuration:", userResponse.configuration);
+        console.log("Email Login - Full UserDetailsResponse:", userResponse);
+        // Check if config exists and is not an empty object
+        if (userResponse.configuration && Object.keys(userResponse.configuration).length > 0) {
           navigate('/dashboard');
         } else {
           navigate('/credentials');

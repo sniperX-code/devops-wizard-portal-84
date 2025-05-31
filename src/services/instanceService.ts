@@ -19,9 +19,7 @@ export interface CreateInstanceRequest {
   name?: string;
 }
 
-export interface InstancesListResponse {
-  instances: Instance[];
-}
+export type InstancesListResponse = Instance[];
 
 export class InstanceService {
   static async getAllInstances(): Promise<InstancesListResponse> {
