@@ -68,6 +68,9 @@ const Navbar: React.FC = () => {
                     <Link to="/me">Profile Details</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
+                    <Link to="/credentials">Configuration</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link to="/profile">Settings</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -130,6 +133,7 @@ const Navbar: React.FC = () => {
                 <div className="py-2 border-t border-border">
                   <Link to="/dashboard" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">Dashboard</Link>
                   <Link to="/me" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">Profile Details</Link>
+                  <Link to="/credentials" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">Configuration</Link>
                   <Link to="/profile" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">Settings</Link>
                   <Link to="/instance" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">My Instance</Link>
                   <Link to="/subscription" className="block py-2 text-foreground hover:text-foreground/80 transition-colors">Subscription</Link>

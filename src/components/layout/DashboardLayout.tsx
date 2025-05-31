@@ -9,7 +9,8 @@ import {
   BarChart3,
   Users,
   LogOut,
-  User
+  User,
+  Webhook
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { icon: Server, label: 'Instance', path: '/instance' },
     { icon: CreditCard, label: 'Subscription', path: '/subscription' },
     { icon: User, label: 'Profile Details', path: '/me' },
+    { icon: Webhook, label: 'Configuration', path: '/credentials' },
     { icon: Settings, label: 'Settings', path: '/profile' },
   ];
   
