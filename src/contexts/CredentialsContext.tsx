@@ -78,11 +78,22 @@ export const CredentialsProvider: React.FC<CredentialsProviderProps> = ({ childr
 
   // Submit credentials to API (create or update config)
   const submitCredentials = () => {
-    const { submitted, ...configData } = credentials;
+    const { submitted, ...restOfCredentials } = credentials;
+
+    // Create a new object containing only the fields expected by the backend DTOs
+    const payloadToSend = {
+      webhookProxyUrl: restOfCredentials.webhookProxyUrl,
+      appId: restOfCredentials.appId,
+      webhookSecret: restOfCredentials.webhookSecret,
+      privateKey: restOfCredentials.privateKey,
+      githubClientId: restOfCredentials.githubClientId,
+      githubClientSecret: restOfCredentials.githubClientSecret,
+    };
+
     if (configId) {
-      updateConfig({ id: configId, data: configData }, { onSuccess: () => refetch() });
+      updateConfig({ id: configId, data: payloadToSend }, { onSuccess: () => refetch() });
     } else {
-      createConfig(configData, { onSuccess: () => refetch() });
+      createConfig(payloadToSend, { onSuccess: () => refetch() });
     }
   };
 

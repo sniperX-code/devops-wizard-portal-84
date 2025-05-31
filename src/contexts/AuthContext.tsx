@@ -5,6 +5,7 @@ import { TokenManager } from '@/config/api';
 import { UserService } from '@/services/userService';
 import { AuthService } from '@/services/authService';
 import { UserProfile } from '@/services/userService';
+import { ConfigService } from '@/services/configService';
 
 // Define the User type
 export type User = {
@@ -100,18 +101,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           isAdmin: response.user.isAdmin || false, // Check for isAdmin property
         };
         setUser(userData);
-        console.log("OAuth Callback - UserDetailsResponse.configuration:", response.configuration);
         console.log("OAuth Callback - Full UserDetailsResponse:", response);
-        // Check if config exists and is not an empty object
-        if (response.configuration && Object.keys(response.configuration).length > 0) {
-          navigate('/dashboard');
-        } else {
-          navigate('/credentials');
-        }
+        
+        // Explicitly check for config using ConfigService.getConfigs()
+        ConfigService.getConfigs().then((configResponse) => {
+          console.log("OAuth Callback - ConfigService.getConfigs response:", configResponse);
+          if (configResponse) {
+            navigate('/dashboard');
+          } else {
+            navigate('/credentials');
+          }
+        }).catch((configError) => {
+          console.error("Error fetching config during OAuth callback:", configError);
+          navigate('/credentials'); // Fallback to credentials if config fetch fails
+        });
+
         toast({
           title: 'Login successful',
           description: `Welcome, ${userData.name}!`,
         });
+
       }).catch(() => {
         TokenManager.removeToken();
       });
@@ -133,27 +142,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAdmin: userResponse.user.isAdmin || false, // Check for isAdmin property
       };
       setUser(userData);
-      console.log("Email Login - UserDetailsResponse.configuration:", userResponse.configuration);
       console.log("Email Login - Full UserDetailsResponse:", userResponse);
+
+      // Explicitly check for config using ConfigService.getConfigs()
+      try {
+        const configResponse = await ConfigService.getConfigs();
+        console.log("Email Login - ConfigService.getConfigs response:", configResponse);
+        if (configResponse) {
+          navigate('/dashboard');
+        } else {
+          navigate('/credentials');
+        }
+      } catch (configError) {
+        console.error("Error fetching config during email login:", configError);
+        navigate('/credentials'); // Fallback to credentials if config fetch fails
+      }
+
       toast({
         title: "Login successful",
         description: `Welcome, ${userData.name}!`,
       });
       setIsLoading(false);
       
-      // Redirect based on user type
+      // No longer redirect based on isAdmin here; that's handled by config check above
       if (userData.isAdmin) {
-        navigate('/admin');
-      } else {
-        console.log("Email Login - UserDetailsResponse.configuration:", userResponse.configuration);
-        console.log("Email Login - Full UserDetailsResponse:", userResponse);
-        // Check if config exists and is not an empty object
-        if (userResponse.configuration && Object.keys(userResponse.configuration).length > 0) {
-          navigate('/dashboard');
-        } else {
-          navigate('/credentials');
-        }
+        // If admin, still allow admin page access regardless of config
+        // This part needs careful consideration based on exact admin flow. For now, keep as is if no config for admin
+        // If you want admins to always go to admin page, move this condition before config check
+        // For simplicity, let's assume admin also needs config or goes to credentials for now
+        // If admin always goes to /admin, this block can be outside the config check
+        // but within the overall successful login flow.
+        navigate('/admin'); // Assuming admin always goes to /admin regardless of config for now
       }
+
       return true;
     } catch (error: any) {
       toast({

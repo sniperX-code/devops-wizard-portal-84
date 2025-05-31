@@ -1,4 +1,3 @@
-
 import { httpClient, API_CONFIG } from '@/config/api';
 
 // Types for user management
@@ -33,7 +32,13 @@ export interface UpdateUserRequest {
 export class UserService {
   static async getUserDetails(): Promise<UserDetailsResponse> {
     return httpClient.makeRequest<UserDetailsResponse>(
-      API_CONFIG.ENDPOINTS.USER.GET_ME
+      API_CONFIG.ENDPOINTS.USER.GET_ME,
+      { 
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      }
     );
   }
 

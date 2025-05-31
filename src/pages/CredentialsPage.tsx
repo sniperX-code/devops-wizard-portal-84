@@ -17,13 +17,6 @@ const CredentialsPage: React.FC = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Redirect to dashboard if credentials are already submitted
-  React.useEffect(() => {
-    if (isSubmitted) {
-      navigate('/dashboard');
-    }
-  }, [isSubmitted, navigate]);
-
   // Handle file upload
   const handlePrivateKeyUpload = (fileContent: string) => {
     try {
