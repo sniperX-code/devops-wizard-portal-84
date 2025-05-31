@@ -10,6 +10,7 @@ export interface UserProfile {
   phoneNumber?: string;
   location?: string;
   avatar?: string;
+  isAdmin?: boolean; // Add isAdmin property
   createdAt: string;
   lastUpdated: string;
 }

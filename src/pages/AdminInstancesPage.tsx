@@ -6,6 +6,8 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,12 +19,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Eye, User, Server, Calendar, Database } from 'lucide-react';
 
 const AdminInstancesPage: React.FC = () => {
   const { allInstances, isLoading, startInstance, stopInstance, deleteInstance } = useAdmin();
@@ -32,6 +43,7 @@ const AdminInstancesPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
   const [instanceToDelete, setInstanceToDelete] = useState<string | null>(null);
+  const [selectedInstance, setSelectedInstance] = useState<string | null>(null);
 
   // Handle instance start
   const handleStartInstance = async (instanceId: string) => {
@@ -91,13 +103,17 @@ const AdminInstancesPage: React.FC = () => {
   const filteredInstances = allInstances.filter(instance => {
     const matchesSearch = 
       instance.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      instance.id.toLowerCase().includes(searchTerm.toLowerCase());
+      instance.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      instance.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${instance.user.firstName} ${instance.user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || instance.status === statusFilter;
     const matchesPlan = planFilter === 'all' || instance.plan === planFilter;
     
     return matchesSearch && matchesStatus && matchesPlan;
   });
+
+  const selectedInstanceDetails = selectedInstance ? allInstances.find(inst => inst.id === selectedInstance) : null;
 
   // Show loading state
   if (isLoading) {
@@ -116,13 +132,21 @@ const AdminInstancesPage: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="p-6">
-        <h1 className="text-3xl font-bold mb-8">All Instances</h1>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Admin - All Instances</h1>
+            <p className="text-muted-foreground">Manage all user instances from here</p>
+          </div>
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+            {filteredInstances.length} instances
+          </Badge>
+        </div>
         
         {/* Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-grow">
             <Input
-              placeholder="Search by name or ID"
+              placeholder="Search by name, ID, user name, or email"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
@@ -157,96 +181,200 @@ const AdminInstancesPage: React.FC = () => {
           </div>
         </div>
         
-        {/* Instances Table */}
-        <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-muted/50">
-                  <th className="text-left py-3 px-4 font-medium">ID</th>
-                  <th className="text-left py-3 px-4 font-medium">Name</th>
-                  <th className="text-left py-3 px-4 font-medium">Status</th>
-                  <th className="text-left py-3 px-4 font-medium">Plan</th>
-                  <th className="text-left py-3 px-4 font-medium">Resources</th>
-                  <th className="text-left py-3 px-4 font-medium">Created</th>
-                  <th className="text-left py-3 px-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInstances.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-6 text-center text-muted-foreground">
-                      No instances found matching your filters
-                    </td>
-                  </tr>
-                ) : (
-                  filteredInstances.map((instance) => (
-                    <tr key={instance.id} className="border-t">
-                      <td className="py-3 px-4 text-sm">{instance.id}</td>
-                      <td className="py-3 px-4 font-medium">{instance.name}</td>
-                      <td className="py-3 px-4">
-                        <StatusBadge status={instance.status} size="sm" />
-                      </td>
-                      <td className="py-3 px-4 capitalize">{instance.plan}</td>
-                      <td className="py-3 px-4">{instance.cpu}vCPU, {instance.memory}GB, {instance.storage}GB</td>
-                      <td className="py-3 px-4 text-sm">{new Date(instance.createdAt).toLocaleString()}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex space-x-2">
-                          {instance.status === 'running' ? (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="h-8 text-devops-red"
-                              onClick={() => handleStopInstance(instance.id)}
-                            >
-                              Stop
-                            </Button>
-                          ) : instance.status === 'stopped' ? (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="h-8 text-devops-green"
-                              onClick={() => handleStartInstance(instance.id)}
-                            >
-                              Start
-                            </Button>
-                          ) : null}
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="h-8 text-destructive"
-                            onClick={() => setInstanceToDelete(instance.id)}
-                          >
-                            Delete
-                          </Button>
+        {/* Instances Grid */}
+        {filteredInstances.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Server className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No instances found matching your filters</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredInstances.map((instance) => (
+              <Card key={instance.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg mb-1">{instance.name}</CardTitle>
+                      <CardDescription className="text-sm">
+                        ID: {instance.id}
+                      </CardDescription>
+                    </div>
+                    <StatusBadge status={instance.status} size="sm" />
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  {/* User Information */}
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="flex items-center mb-2">
+                      <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="font-medium text-sm">Owner</span>
+                    </div>
+                    <p className="text-sm font-medium">{instance.user.firstName} {instance.user.lastName}</p>
+                    <p className="text-xs text-muted-foreground">{instance.user.email}</p>
+                  </div>
+                  
+                  {/* Instance Details */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Plan:</span>
+                      <Badge variant="outline" className="ml-1 text-xs">
+                        {instance.plan}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Resources:</span>
+                      <span className="ml-1">{instance.cpu}vCPU, {instance.memory}GB</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Created {new Date(instance.createdAt).toLocaleDateString()}
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <Eye className="h-3 w-3 mr-1" />
+                          Details
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Instance Details - {instance.name}</DialogTitle>
+                          <DialogDescription>
+                            Complete information about this instance
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        <div className="grid gap-6">
+                          {/* Instance Info */}
+                          <div>
+                            <h4 className="font-semibold mb-3 flex items-center">
+                              <Database className="h-4 w-4 mr-2" />
+                              Instance Information
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">ID:</span>
+                                <p className="font-mono">{instance.id}</p>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Status:</span>
+                                <div className="mt-1">
+                                  <StatusBadge status={instance.status} size="sm" />
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Plan:</span>
+                                <p className="capitalize">{instance.plan}</p>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Resources:</span>
+                                <p>{instance.cpu}vCPU, {instance.memory}GB RAM, {instance.storage}GB Storage</p>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Created:</span>
+                                <p>{new Date(instance.createdAt).toLocaleString()}</p>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Last Updated:</span>
+                                <p>{new Date(instance.lastUpdated).toLocaleString()}</p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* User Info */}
+                          <div>
+                            <h4 className="font-semibold mb-3 flex items-center">
+                              <User className="h-4 w-4 mr-2" />
+                              Owner Information
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">User ID:</span>
+                                <p className="font-mono">{instance.user.id}</p>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Name:</span>
+                                <p>{instance.user.firstName} {instance.user.lastName}</p>
+                              </div>
+                              <div className="col-span-2">
+                                <span className="text-muted-foreground">Email:</span>
+                                <p>{instance.user.email}</p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      </DialogContent>
+                    </Dialog>
+                    
+                    {instance.status === 'running' ? (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                        onClick={() => handleStopInstance(instance.id)}
+                      >
+                        Stop
+                      </Button>
+                    ) : instance.status === 'stopped' ? (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-green-600 border-green-200 hover:bg-green-50"
+                        onClick={() => handleStartInstance(instance.id)}
+                      >
+                        Start
+                      </Button>
+                    ) : null}
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={() => setInstanceToDelete(instance.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </div>
+        )}
         
         {/* Statistics */}
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground mb-1">Total Instances</p>
-            <p className="text-2xl font-bold">{filteredInstances.length}</p>
-          </div>
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground mb-1">Running Instances</p>
-            <p className="text-2xl font-bold">{filteredInstances.filter(i => i.status === 'running').length}</p>
-          </div>
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground mb-1">Total CPU</p>
-            <p className="text-2xl font-bold">{filteredInstances.reduce((acc, i) => acc + i.cpu, 0)}vCPU</p>
-          </div>
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground mb-1">Total RAM</p>
-            <p className="text-2xl font-bold">{filteredInstances.reduce((acc, i) => acc + i.memory, 0)}GB</p>
-          </div>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground mb-1">Total Instances</p>
+              <p className="text-2xl font-bold">{filteredInstances.length}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground mb-1">Running Instances</p>
+              <p className="text-2xl font-bold text-green-600">{filteredInstances.filter(i => i.status === 'running').length}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground mb-1">Total CPU</p>
+              <p className="text-2xl font-bold">{filteredInstances.reduce((acc, i) => acc + i.cpu, 0)}vCPU</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground mb-1">Total RAM</p>
+              <p className="text-2xl font-bold">{filteredInstances.reduce((acc, i) => acc + i.memory, 0)}GB</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
       

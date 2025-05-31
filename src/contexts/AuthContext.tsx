@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             id: response.user.id,
             name: `${response.user.firstName} ${response.user.lastName}`.trim(),
             email: response.user.email,
-            isAdmin: false,
+            isAdmin: response.user.isAdmin || false, // Check for isAdmin property
           };
           setUser(userData);
         } catch (error) {
@@ -98,7 +98,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           id: response.user.id,
           name: `${response.user.firstName} ${response.user.lastName}`.trim(),
           email: response.user.email,
-          isAdmin: false,
+          isAdmin: response.user.isAdmin || false, // Check for isAdmin property
         };
         setUser(userData);
         // Check if config exists
@@ -129,7 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         id: userResponse.user.id,
         name: `${userResponse.user.firstName} ${userResponse.user.lastName}`.trim(),
         email: userResponse.user.email,
-        isAdmin: false,
+        isAdmin: userResponse.user.isAdmin || false, // Check for isAdmin property
       };
       setUser(userData);
       toast({
@@ -137,11 +137,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         description: `Welcome, ${userData.name}!`,
       });
       setIsLoading(false);
-      // Check if config exists
-      if (userResponse.configuration) {
-        navigate('/dashboard');
+      
+      // Redirect based on user type
+      if (userData.isAdmin) {
+        navigate('/admin');
       } else {
-        navigate('/credentials');
+        // Check if config exists for regular users
+        if (userResponse.configuration) {
+          navigate('/dashboard');
+        } else {
+          navigate('/credentials');
+        }
       }
       return true;
     } catch (error: any) {

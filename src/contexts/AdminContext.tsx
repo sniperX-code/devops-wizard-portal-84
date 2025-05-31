@@ -3,14 +3,25 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useAuth } from './AuthContext';
 import { Instance, InstanceStatus } from './InstanceContext';
 
+// Extended instance type with user information
+export interface AdminInstance extends Instance {
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
 // Define the admin context type
 type AdminContextType = {
-  allInstances: Instance[];
+  allInstances: AdminInstance[];
   isLoading: boolean;
   error: string | null;
   startInstance: (instanceId: string) => Promise<void>;
   stopInstance: (instanceId: string) => Promise<void>;
   deleteInstance: (instanceId: string) => Promise<void>;
+  getInstanceDetails: (instanceId: string) => AdminInstance | null;
   getSystemStatus: () => {
     totalInstances: number;
     runningInstances: number;
@@ -29,12 +40,21 @@ type AdminProviderProps = {
   children: ReactNode;
 };
 
-// Generate a random instance for mock data
-const generateRandomInstance = (id: number): Instance => {
+// Generate a random instance with user data for mock data
+const generateRandomInstance = (id: number): AdminInstance => {
   const statuses: InstanceStatus[] = ['running', 'stopped', 'error'];
   const plans = ['free', 'pro', 'enterprise'];
+  const users = [
+    { id: 'usr_1', firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+    { id: 'usr_2', firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com' },
+    { id: 'usr_3', firstName: 'Bob', lastName: 'Johnson', email: 'bob@example.com' },
+    { id: 'usr_4', firstName: 'Alice', lastName: 'Brown', email: 'alice@example.com' },
+    { id: 'usr_5', firstName: 'Charlie', lastName: 'Davis', email: 'charlie@example.com' },
+  ];
+  
   const randomIndex = Math.floor(Math.random() * statuses.length);
   const randomPlanIndex = Math.floor(Math.random() * plans.length);
+  const randomUserIndex = Math.floor(Math.random() * users.length);
   const createdDate = new Date();
   createdDate.setDate(createdDate.getDate() - Math.floor(Math.random() * 30));
   
@@ -47,14 +67,15 @@ const generateRandomInstance = (id: number): Instance => {
     cpu: Math.floor(Math.random() * 4) + 1,
     memory: (Math.floor(Math.random() * 8) + 1) * 2,
     storage: (Math.floor(Math.random() * 5) + 1) * 10,
-    plan: plans[randomPlanIndex] as 'free' | 'pro' | 'enterprise'
+    plan: plans[randomPlanIndex] as 'free' | 'pro' | 'enterprise',
+    user: users[randomUserIndex]
   };
 };
 
 // Create the admin provider
 export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  const [allInstances, setAllInstances] = useState<Instance[]>([]);
+  const [allInstances, setAllInstances] = useState<AdminInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,7 +85,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       setIsLoading(true);
       
       // Generate mock data
-      const mockInstances: Instance[] = Array(12)
+      const mockInstances: AdminInstance[] = Array(12)
         .fill(null)
         .map((_, index) => generateRandomInstance(index + 1));
       
@@ -126,6 +147,11 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     });
   };
 
+  // Get instance details
+  const getInstanceDetails = (instanceId: string): AdminInstance | null => {
+    return allInstances.find(inst => inst.id === instanceId) || null;
+  };
+
   // Get system status
   const getSystemStatus = () => {
     const runningInstances = allInstances.filter(inst => inst.status === 'running').length;
@@ -164,6 +190,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       startInstance,
       stopInstance,
       deleteInstance,
+      getInstanceDetails,
       getSystemStatus
     }}>
       {children}
