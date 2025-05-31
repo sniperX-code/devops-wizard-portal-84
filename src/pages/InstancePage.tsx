@@ -17,11 +17,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Server, Activity, HardDrive, Database } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useAuth } from '@/contexts/AuthContext';
 
 const InstancePage: React.FC = () => {
   const { instance, isLoading, startInstance, stopInstance, deleteInstance } = useInstance();
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { user } = useAuth();
 
   // Handle instance start
   const handleStartInstance = async () => {
@@ -121,13 +123,13 @@ const InstancePage: React.FC = () => {
                   <CardTitle className="text-2xl">{instance.name}</CardTitle>
                   <CardDescription className="mt-2 flex items-center">
                     <StatusBadge status={instance.status} className="mr-2" />
-                    {instance.status === 'running' && (
+                    {(instance.status === 'running' || instance.status === 'creating') && (
                       <span className="flex items-center gap-1 ml-2">
                         <span className="inline-block w-3 h-3 rounded-full bg-green-500 animate-pulse" />
                         <span className="text-green-700 font-semibold text-sm">Active</span>
                       </span>
                     )}
-                    {instance.status !== 'running' && (
+                    {!(instance.status === 'running' || instance.status === 'creating') && (
                       <span className="text-muted-foreground ml-2">{instance.status ? instance.status.charAt(0).toUpperCase() + instance.status.slice(1) : 'Unknown'}</span>
                     )}
                     <span className="ml-4">Created on {new Date(instance.createdAt).toLocaleDateString()}</span>
@@ -170,7 +172,7 @@ const InstancePage: React.FC = () => {
                       <div className="flex justify-between py-2 border-b">
                         <span className="text-muted-foreground">Status</span>
                         <span className="font-medium capitalize">
-                          {instance.status === 'running' ? (
+                          {(instance.status === 'running' || instance.status === 'creating') ? (
                             <span className="flex items-center gap-1">
                               <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                               Active
@@ -226,7 +228,7 @@ const InstancePage: React.FC = () => {
                 </div>
                 
                 {/* Fake interactive chart and logs when running */}
-                {instance.status === 'running' && (
+                {(instance.status === 'running' || instance.status === 'creating') && (
                   <div className="grid md:grid-cols-2 gap-8 mt-8">
                     {/* Fake Chart */}
                     <div className="bg-white rounded-xl shadow p-6">
@@ -270,13 +272,17 @@ const InstancePage: React.FC = () => {
             </CardContent>
             
             <CardFooter className="border-t pt-6 flex justify-between">
-              <Button
-                variant="outline"
-                onClick={() => window.open(`https://${instance.name}-${instance.id}.devopswizard.cloud`, '_blank')}
-                disabled={instance.status !== 'running'}
-              >
-                Open Console
-              </Button>
+              {((instance.status === 'running' || instance.status === 'creating') && user?.id) && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const domain = import.meta.env.VITE_BOT_DOMAIN || 'bot.devops-wizard.com';
+                    window.open(`https://${domain}/${user.id}/probot`, '_blank');
+                  }}
+                >
+                  Check instance
+                </Button>
+              )}
               <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
                 Delete Instance
               </Button>

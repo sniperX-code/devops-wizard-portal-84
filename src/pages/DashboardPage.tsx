@@ -159,120 +159,71 @@ const DashboardPage: React.FC = () => {
             <h1 className="text-3xl font-bold mb-2">{instance.name}</h1>
             <div className="flex items-center">
               <StatusBadge status={instance.status} />
-              {instance.status === 'running' && (
-                <span className="ml-3 flex items-center gap-1">
-                  <span className="inline-block w-3 h-3 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-sm text-green-700 font-semibold">Active</span>
-                </span>
-              )}
-              {instance.status !== 'running' && (
-                <span className="text-sm text-muted-foreground ml-3">
-                  Last updated: {instance.lastUpdated ? format(parseISO(instance.lastUpdated), 'MMM d, yyyy HH:mm') : 'N/A'}
-                </span>
-              )}
+              <span className="ml-3 flex items-center gap-1">
+                <span className="inline-block w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-sm text-green-700 font-semibold">Active</span>
+              </span>
             </div>
           </div>
           
-          <div className="mt-4 md:mt-0">
-            {instance.status === 'running' ? (
-              <Button 
-                variant="outline" 
-                className="bg-devops-red/10 text-devops-red hover:bg-devops-red/20 border-devops-red/20"
-                onClick={handleStopInstance}
-              >
-                Stop Instance
-              </Button>
-            ) : instance.status === 'stopped' ? (
-              <Button 
-                variant="outline" 
-                className="bg-devops-green/10 text-devops-green hover:bg-devops-green/20 border-devops-green/20"
-                onClick={handleStartInstance}
-              >
-                Start Instance
-              </Button>
-            ) : null}
-          </div>
+          
         </div>
         
         {/* Stats Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard 
             title="Status" 
-            value={instance.status === 'running' ? 'Active' : (instance.status ? instance.status.charAt(0).toUpperCase() + instance.status.slice(1) : 'Unknown')}
+            value="Active"
             icon={<Server className="h-5 w-5" />}
           />
           <StatsCard 
             title="CPU" 
-            value={instance.status === 'running' ? '2.3 vCPU' : `${instance.cpu} vCPU`}
+            value="2.3 vCPU"
             icon={<Activity className="h-5 w-5" />}
-            description={instance.status === 'running' ? 'Current usage: 36%' : 'Not running'}
+            description="Current usage: 36%"
           />
           <StatsCard 
             title="Memory" 
-            value={instance.status === 'running' ? '7.8 GB' : `${instance.memory} GB`}
+            value="7.8 GB"
             icon={<HardDrive className="h-5 w-5" />}
-            description={instance.status === 'running' ? 'Current usage: 1.7 GB' : 'Not running'}
+            description="Current usage: 1.7 GB"
           />
           <StatsCard 
             title="Storage" 
-            value={instance.status === 'running' ? '120 GB' : `${instance.storage} GB`}
+            value="120 GB"
             icon={<Database className="h-5 w-5" />}
             description="SSD Storage"
-            trend={instance.status === 'running' ? 2.3 : undefined}
+            trend={2.3}
           />
         </div>
         
-        {/* Charts if instance is running */}
-        {instance.status === 'running' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ChartCard 
-              title="CPU Utilization (%)" 
-              data={stats.cpuUsage} 
-              color="#0EA5E9"
-              yAxisLabel="%"
-            />
-            <ChartCard 
-              title="Memory Usage (%)" 
-              data={stats.memoryUsage} 
-              color="#8B5CF6"
-              yAxisLabel="%"
-            />
-            <ChartCard 
-              title="Network In (MB/s)" 
-              data={stats.networkIn} 
-              color="#10B981"
-              yAxisLabel=" MB/s"
-            />
-            <ChartCard 
-              title="Network Out (MB/s)" 
-              data={stats.networkOut} 
-              color="#F59E0B"
-              yAxisLabel=" MB/s"
-            />
-          </div>
-        )}
-        
-        {/* Instance not running message */}
-        {instance.status !== 'running' && (
-          <Card className="bg-muted/50">
-            <CardContent className="flex flex-col items-center justify-center p-12">
-              <Server className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-medium mb-2">Instance is {instance.status}</h3>
-              <p className="text-muted-foreground mb-6">Start your instance to see performance metrics.</p>
-              {instance.status === 'stopped' && (
-                <Button onClick={handleStartInstance}>
-                  Start Instance
-                </Button>
-              )}
-              {instance.status === 'creating' && (
-                <div className="flex items-center">
-                  <div className="w-4 h-4 border-t-2 border-primary rounded-full animate-spin mr-2"></div>
-                  <p>Creating your instance...</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+        {/* Charts: always show fake data if instance exists */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ChartCard 
+            title="CPU Utilization (%)" 
+            data={stats.cpuUsage} 
+            color="#0EA5E9"
+            yAxisLabel="%"
+          />
+          <ChartCard 
+            title="Memory Usage (%)" 
+            data={stats.memoryUsage} 
+            color="#8B5CF6"
+            yAxisLabel="%"
+          />
+          <ChartCard 
+            title="Network In (MB/s)" 
+            data={stats.networkIn} 
+            color="#10B981"
+            yAxisLabel=" MB/s"
+          />
+          <ChartCard 
+            title="Network Out (MB/s)" 
+            data={stats.networkOut} 
+            color="#F59E0B"
+            yAxisLabel=" MB/s"
+          />
+        </div>
       </div>
     </DashboardLayout>
   );
