@@ -23,7 +23,8 @@ const CredentialsPage: React.FC = () => {
       if (!fileContent || typeof fileContent !== 'string' || fileContent.trim().length === 0) {
         throw new Error('Private Key is required and must be a string.');
       }
-      updateCredentials('privateKey', fileContent);
+      const cleanedPrivateKey = fileContent.replace(/\n|\r/g, ''); // Remove newlines
+      updateCredentials('privateKey', cleanedPrivateKey);
       toast({
         title: "File Uploaded",
         description: "Private key file has been uploaded successfully.",
@@ -86,20 +87,31 @@ const CredentialsPage: React.FC = () => {
       });
       return;
     }
-    setIsSubmitting(true);
-    try {
-      await submitCredentials();
+    if (credentials.privateKey.length > 5000) { // Increased validation limit for private key after stripping newlines
       toast({
-        title: "Credentials Saved",
-        description: "Your credentials have been saved successfully.",
-      });
-      navigate('/dashboard');
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || 'Failed to save credentials.',
+        title: "Validation Error",
+        description: "Private Key must be at most 5000 characters.",
         variant: "destructive"
       });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      submitCredentials(
+        () => {
+          toast({
+            title: "Credentials Saved",
+            description: "Your credentials have been saved successfully.",
+          });
+        },
+        (error: any) => {
+          toast({
+            title: "Error",
+            description: error.message || 'Failed to save credentials.',
+            variant: "destructive",
+          });
+        }
+      );
     } finally {
       setIsSubmitting(false);
     }

@@ -69,6 +69,13 @@ export const createHttpClient = () => {
       ...options.headers,
     };
 
+    console.log('Sending request:', {
+      url,
+      method: options.method,
+      body: options.body,
+      headers,
+    });
+
     try {
       const response = await fetch(url, {
         ...options,

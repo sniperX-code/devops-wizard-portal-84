@@ -33,7 +33,7 @@ const initialCredentials: Credentials = {
 type CredentialsContextType = {
   credentials: Credentials;
   updateCredentials: (field: keyof Credentials, value: string) => void;
-  submitCredentials: () => void;
+  submitCredentials: (onSuccess: () => void, onError: (error: Error) => void) => void;
   resetCredentials: () => void;
   isSubmitted: boolean;
 };
@@ -81,7 +81,8 @@ export const CredentialsProvider: React.FC<CredentialsProviderProps> = ({ childr
   }, [configs]);
 
   useEffect(() => {
-    if (!configs && user) {
+    // Only redirect to /credentials if user is logged in, no config exists, and not already on /credentials
+    if (user && !configs && window.location.pathname !== '/credentials') {
       navigate('/credentials');
     }
   }, [configs, user, navigate]);
@@ -91,8 +92,8 @@ export const CredentialsProvider: React.FC<CredentialsProviderProps> = ({ childr
     setCredentials(prev => ({ ...prev, [field]: value }));
   };
 
-  // Submit credentials to API (create or update config)
-  const submitCredentials = () => {
+  // Submit credentials to API (create or alter config)
+  const submitCredentials = (onSuccess: () => void, onError: (error: Error) => void) => {
     const { submitted, ...restOfCredentials } = credentials;
 
     // Create a new object containing only the fields expected by the backend DTOs
@@ -106,9 +107,9 @@ export const CredentialsProvider: React.FC<CredentialsProviderProps> = ({ childr
     };
 
     if (configId) {
-      updateConfig({ id: configId, data: payloadToSend }, { onSuccess: () => navigate('/dashboard') });
+      updateConfig({ id: configId, data: payloadToSend }, { onSuccess, onError });
     } else {
-      createConfig(payloadToSend, { onSuccess: () => navigate('/dashboard') });
+      createConfig(payloadToSend, { onSuccess, onError });
     }
   };
 
